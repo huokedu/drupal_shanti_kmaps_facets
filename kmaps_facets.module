@@ -8,9 +8,8 @@ function kmaps_facets_init() {
 	// error_log("loading json2: " . print_r(libraries_load('json2'),true));
 	libraries_load('json2');
   // Need to add debugging (the returned object from libraries_load is the only error logging you ever get)
-
   //error_log("loading fancytree: " . print_r(libraries_load('fancytree','source'),true));
-	libraries_load('fancytree','source');
+	$res = libraries_load('fancytree','source');
   //error_log("loading ajaxsolr: " . print_r(libraries_load('ajaxsolr'), true));
   libraries_load('ajaxsolr');
   drupal_add_js(drupal_get_path('module', 'kmaps_facets') . "/js/kmaps_facets.js",array(
@@ -34,8 +33,9 @@ function kmaps_facets_help($path, $arg) {
 
 function kmaps_facets_menu() {
 
-  $items = array();
-
+  $items = array(); 
+	
+	// Path for Module Settings form
   $items['admin/config/user-interface/kmaps_facets'] = array(
     'title' => 'Kmaps Facets Settings',
     'description' => 'Configure Kmaps Facets Module',
@@ -43,7 +43,16 @@ function kmaps_facets_menu() {
     'page arguments' => array('kmaps_facets_settings'),
     'access arguments' => array('administer site configuration'),
    );
-
+	
+	// API Path to Return All Kmap Subject Data For a Field
+	$items['kmapfacets/facet/info/all'] = array(
+		'title' => 'Kmaps Facets API',
+    'description' => 'Returns all kmap info for a field (test)',
+    'page callback' => 'kmaps_facets_facet_info',
+    'page arguments' => array('field_subject'), // TODO: Generalize field name argument 
+    'access arguments' => TRUE,
+   );
+	
   return $items;
 }
 
@@ -99,6 +108,10 @@ function kmaps_facets_block_info() {
  */
 
 function kmaps_facets_block_configure($delta = 1) {
+	$form['kmaps_facets_block_delta'] = array(
+		'#type' => 'hidden',
+		'#value' => $delta,
+	);
    $form['kmaps_facets_block_name_' . $delta] = array(
     '#type' => 'textfield',
     '#title' => t('Block name'),
@@ -111,7 +124,45 @@ function kmaps_facets_block_configure($delta = 1) {
     '#default_value' => variable_get('kmaps_facets_block_type_' . $delta, 'places'),
     '#options' => drupal_map_assoc(array('places', 'subjects')),
   );
+  $form['kmaps_facets_block_root_' . $delta] = array(
+    '#type' => 'textfield',
+    '#title' => t('Kmap Root Node'),
+    '#description' => t('Enter the KMap ID for the Root Node of the nav-tree in this block'),
+    '#default_value' => variable_get('kmaps_facets_block_root_' . $delta, FALSE),
+  );
   return $form;
+}
+
+/**
+ * Block admin form alter to add validation for kmap facet block settings form
+ */
+function kmaps_facets_form_block_admin_configure_alter(&$form, &$form_state, $form_id) {
+  if ($form['module']['#value'] == 'kmaps_facets') {
+    $form['#validate'][] = 'kmaps_facets_block_validate';
+  }
+}
+
+/**
+ * Function to validate kmap facet block settings to make sure kmaps root id either FALSE or a positive integer
+ */
+function kmaps_facets_block_validate(&$form, $form_state) {
+	// TODO: Add check with kmaps server to make sure root id is a valid kmap id for that type.
+	if (isset($form_state['values']['kmaps_facets_block_delta'])) {
+		$delta = $form_state['values']['kmaps_facets_block_delta'];
+		$root = $form_state['values']["kmaps_facets_block_root_{$delta}"];
+		if ($root && $root != "") {
+			if (is_numeric($root)) {
+				$root = $root * 1;
+				if ($root < 1) {
+					form_set_error("kmaps_facets_block_root_{$delta}", t('The root KMap Id must be a positive integer'));
+				}
+			} else {
+					form_set_error("kmaps_facets_block_root_{$delta}", t('The root KMap Id must be an integer'));
+			}
+		}
+	} else {
+		dpm ("No delta in block validate function!");
+	}
 }
 
 
@@ -121,6 +172,8 @@ function kmaps_facets_block_configure($delta = 1) {
 function kmaps_facets_block_save($delta, $edit) {
   variable_set('kmaps_facets_block_name_' . $delta, $edit['kmaps_facets_block_name_' . $delta]);
   variable_set('kmaps_facets_block_type_' . $delta, $edit['kmaps_facets_block_type_' . $delta]);
+	if ($edit['kmaps_facets_block_root_' . $delta] == "") { $edit['kmaps_facets_block_root_' . $delta] = FALSE; }
+  variable_set('kmaps_facets_block_root_' . $delta, $edit['kmaps_facets_block_root_' . $delta]);
 }
 
 
@@ -144,11 +197,12 @@ function kmaps_facets_block_view($delta = 1) {
 function _kmaps_facets_block($delta) {
     // error_log("_kmaps_facets_block helper function...");
     // Send delta and block type to template to store in data- attributes. Duplicates Drupal.settings in block_view which we may not need
-    $km_type = variable_get('kmaps_facets_block_type_' . $delta, 'places');
+    $kmtype = variable_get('kmaps_facets_block_type_' . $delta, 'places');
+		$kmroot = variable_get('kmaps_facets_block_root_' . $delta, FALSE);
 		$block = array(
         'subject' => '',
         'content' => theme('kmaps_facets_block', array(
-            'delta' => $delta, 'kmtype' => $km_type, 'forums' => 'f', 'topics' => 't', 'parents' => 'p'
+            'delta' => $delta, 'kmtype' => $kmtype, 'kmroot' => $kmroot, 'forums' => 'f', 'topics' => 't', 'parents' => 'p'
         )),
     );
 //    error_log("returning: " . print_r($block,true));
@@ -203,4 +257,23 @@ function kmaps_facets_theme() {
 
 }
 
-
+function kmaps_facets_facet_info($field_name) {
+	//$fname = 'field_subject';
+	$tbl = 'field_data_' . $field_name;
+	$col = $field_name . '_id';
+	
+	$q = db_select($tbl, 't')->fields('t'); //, array('entity_id', $col)
+	$res = $q->execute();
+	$alltags = $res->fetchAll();
+	$kmapres = array();
+	foreach ($alltags as $tinfo) {
+		$kid = $tinfo->{$col};
+		$nid = $tinfo->entity_id;
+		if (isset($kmapres[$kid])) {
+			$kmapres[$kid][] = $nid;
+		} else {
+			$kmapres[$kid] = array($nid);
+		}
+	}
+	drupal_json_output($kmapres);
+}

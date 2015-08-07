@@ -11,7 +11,7 @@
 ?>
 
 <!-- BEGIN view section -->
-<section class="view-section">
+<section id="ftsection" class="view-section">
     <ul class="nav nav-tabs">
         <li class="treeview active"><a href=".treeview" data-toggle="tab"><span class="icon shanticon-tree"></span>Tree</a></li>
         <li class="listview"><a href=".listview" data-toggle="tab"><span class="icon shanticon-list"></span>List</a></li>
@@ -19,7 +19,11 @@
     <div class="tab-content">
         <!-- TAB - tree view -->
         <div class="treeview tab-pane active">
-            <div id="tree" data-delta="<?php echo $delta ?>" data-kmtype="<?php echo $kmtype ?>" class="view-wrap"><!-- view-wrap controls tree container height --></div>
+            <div id="tree" 
+            			data-delta="<?php echo $delta; ?>" 
+            			data-kmtype="<?php echo $kmtype; ?>" 
+            			data-kmroot="<?php echo $kmroot; ?>"
+            			class="view-wrap"><!-- view-wrap controls tree container height --></div>
         </div>
         <!-- TAB - list view -->
         <div class="listview tab-pane">

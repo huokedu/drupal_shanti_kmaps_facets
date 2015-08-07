@@ -39,10 +39,10 @@
   Drupal.behaviors.kmaps_facets = {
     attach: function (context, settings) {
         // add a new function overlayMask
-
-        $('#kmaps-search').once('fancytree', function () {
-            var theType = (Drupal.settings.kmaps_explorer) ? Drupal.settings.kmaps_explorer.app : "places";
-
+        $('#ftsection').once('fancytree', function () {
+            var theType = Drupal.settings.kmaps_facets.block_1_type;
+            var kmroot = $("#tree").data('kmroot');
+            if (kmroot) { kmroot = '/' + kmroot; }
             var Settings = {
                 type: theType,
                 baseUrl: 'http://' + theType + '.kmaps.virginia.edu',
@@ -69,19 +69,21 @@
                     leavesOnly: false
                 },
                 activate: function (event, data) {
-
-                    Settings.type = (Drupal.settings.kmaps_explorer) ? Drupal.settings.kmaps_explorer.app : "places";
+                    kmtype = $(this).data('kmtype');
                     // event.preventDefault();
                     var listitem = $("td[kid='" + data.node.key + "']");
                     $('.row_selected').removeClass('row_selected');
                     $(listitem).closest('tr').addClass('row_selected');
-
-                    var url = location.origin + location.pathname.substring(0, location.pathname.indexOf(Settings.type)) + Settings.type + '/' + data.node.key + '/overview/nojs';
+                    console.log("need to write code for node activate");
+										/**
+                    var url = location.origin + location.pathname.substring(0, location.pathname.indexOf(kmtype)) + kmtype + '/' + data.node.key + '/overview/nojs';
                     $(data.node.span).find('#ajax-id-' + data.node.key).trigger('navigate');
+                    */
                 },
                 createNode: function (event, data) {
                     //console.log("createNode: " + data.node.span)
                     //console.dir(data);
+
                     data.node.span.childNodes[2].innerHTML = '<span id="ajax-id-' + data.node.key + '">' + data.node.title + '</span>';
 
                     //console.log("STATUS NODE: " + data.node.isStatusNode());
@@ -92,7 +94,7 @@
 
                     var theElem = data.node.span;
                     var theKey = data.node.key;
-                    var theType = Settings.type;
+                    var theType = $(this).data('kmtype');
                     var theTitle = data.node.title;
                     var theCaption = data.node.data.caption;
 
@@ -131,7 +133,7 @@
                 },
                 source: {
                     //          url: "/fancy_nested.json",
-                    url: Settings.baseUrl + "/features/fancy_nested.json?view_code=" + $('nav li.form-group input[name=option2]:checked').val(),
+                    url: Settings.baseUrl + "/features" + kmroot + "/fancy_nested.json?view_code=" + $('nav li.form-group input[name=option2]:checked').val(),
                     cache: false,
                     debugDelay: 1000,
                     timeout: 90000,
@@ -155,37 +157,36 @@
                 },
 
                 loadChildren: function(evt,ctx) {
-                    // console.log("pathname = " + window.location.pathname);
-                    // console.log("baseType = "  + Drupal.settings.basePath + Settings.type);
-
-
-
-                    //if (window.location.pathname === Drupal.settings.basePath + Settings.type) {
-                        //console.dir(Drupal);
-                        //console.log("EVENT: loadChildren");
-                        //console.dir(evt);
-                        //console.dir(ctx);
-
-                        //console.log("YEERT: " + Settings.type);
-                        var startId = Drupal.settings.shanti_kmaps_admin['shanti_kmaps_admin_root_' + Settings.type + '_id'];
-
-                        if (startId) {
-                            //ctx.tree.activateKey(startId);
-                            var startNode = ctx.tree.getNodeByKey(startId);
-                            if (startNode) {
-                                console.log("autoExpanding node: " + startNode.title + " (" + startNode.key + ")");
-                                try {
-                                    startNode.setExpanded(true);
-                                    startNode.makeVisible();
-                                } catch( e ) { console.err ("autoExpand failed")}
-                            }
-                        }
-                    //}
+									var startId = 'ajax-id-' + $(this).data('kmroot');
+									var delta = $(this).data('delta');
+									if (startId) {
+                      var startNode = ctx.tree.getRootNode();
+                      if (startNode) {
+                          try {
+                              startNode.children[0].setExpanded(true);
+                              startNode.children[0].makeVisible();
+                          } catch( e ) { 
+                          	console.error ("autoExpand failed", e) ;
+                          }
+                      } else {
+                      	console.log ("no start node");
+                      }
+                   }
+                    console.log("evt", evt);
+                    console.dir(ctx);
+                    ctx.tree.filterNodes(function(node) {
+                    	if (node.title.indexOf('Genres') > -1) {
+                    		console.log(node);
+                    		node.title = node.title +  " (∞)";
+                    		return true;
+                    	}
+                    	return false;
+                    });
                 },
-                cookieId: "kmaps1tree", // set cookies for search-browse tree, the first fancytree loaded
-                idPrefix: "kmaps1tree"
+                cookieId: "kmaps" + $(this).data('delta') + "tree", // set cookies for search-browse tree
+                idPrefix: "kmaps" + $(this).data('delta') + "tree"
             });
-
+						
             $('.advanced-link').click(function () {
                 $(this).toggleClass("show-advanced", 'fast');
                 $(".advanced-view").slideToggle('fast');
@@ -412,7 +413,7 @@
                     //});
                 });
             };
-
+						
             var searchUtil = {
                 clearSearch: function () {
                     //        console.log("BANG: searchUtil.clearSearch()");
