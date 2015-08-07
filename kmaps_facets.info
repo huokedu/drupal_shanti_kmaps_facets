@@ -1,0 +1,13 @@
+name = Kmaps Facet Blocks
+description = A drupal module to provide a blocks that display custom kmap trees to use as facets.
+core = 7.x
+package = Shanti
+version = 1.0-alpha
+dependencies[] = libraries (>=2.1)
+dependencies[] = fancytree
+dependencies[] = ajaxsolr
+configure = admin/config/user-interface/kmaps_facets
+
+; JS Added in module init. CSS is empty right now.
+; scripts[]   =  js/kmaps_facets.js  
+; stylesheets[all][] = stylesheets/kmaps_facets.css

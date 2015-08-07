@@ -2,10 +2,6 @@
  * Created by ys2n on 10/3/14.
  */
 
-
-
-
-
 (function ($) {
 
     $.fn.overlayMask = function (action) {
@@ -40,24 +36,12 @@
         return this;
     };
 
-  Drupal.behaviors.kmaps_navigator = {
+  Drupal.behaviors.kmaps_facets = {
     attach: function (context, settings) {
         // add a new function overlayMask
 
         $('#kmaps-search').once('fancytree', function () {
             var theType = (Drupal.settings.kmaps_explorer) ? Drupal.settings.kmaps_explorer.app : "places";
-console.log(Drupal.settings.kmaps_navigator);
-console.log($('#tree'));
-            // Root redirect to "places"
-            /** Taken out for generalized module MANU-1839
-             * TODO: Convert to setting for standalone app
-             
-            if (window.location.pathname === Drupal.settings.basePath) {
-                var loc = Drupal.settings.basePath + theType;
-                console.log("REDIRECTING TO " +  loc);
-                window.location.href = loc;
-            }
-            */
 
             var Settings = {
                 type: theType,
@@ -85,9 +69,6 @@ console.log($('#tree'));
                     leavesOnly: false
                 },
                 activate: function (event, data) {
-
-                    //console.log("ACTIVATE:");
-                    //console.dir(data);
 
                     Settings.type = (Drupal.settings.kmaps_explorer) ? Drupal.settings.kmaps_explorer.app : "places";
                     // event.preventDefault();

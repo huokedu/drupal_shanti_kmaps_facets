@@ -4,7 +4,7 @@
 * Block Module for displaying a Kmaps Navigator
 */
 
-function kmaps_navigator_init() {
+function kmaps_facets_init() {
 	// error_log("loading json2: " . print_r(libraries_load('json2'),true));
 	libraries_load('json2');
   // Need to add debugging (the returned object from libraries_load is the only error logging you ever get)
@@ -13,9 +13,9 @@ function kmaps_navigator_init() {
 	libraries_load('fancytree','source');
   //error_log("loading ajaxsolr: " . print_r(libraries_load('ajaxsolr'), true));
   libraries_load('ajaxsolr');
-  drupal_add_js(drupal_get_path('module', 'kmaps_navigator') . "/js/kmaps_navigator.js",array(
-          'group' => JS_THEME,
-      ));
+  drupal_add_js(drupal_get_path('module', 'kmaps_facets') . "/js/kmaps_facets.js",array(
+      'group' => JS_THEME,
+  ));
   // drupal_add_js("https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js",array('type' => 'external'));
   // drupal_add_css("https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css",array('type' => 'external'));
   // drupal_add_css("https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css",array('type' => 'external'));
@@ -24,23 +24,23 @@ function kmaps_navigator_init() {
   drupal_add_library('system', 'drupal.ajax');
 }
 
-function kmaps_navigator_help($path, $arg) {
+function kmaps_facets_help($path, $arg) {
     switch ($path) {
-        case "admin/help#kmaps_navigator":
+        case "admin/help#kmaps_facets":
             return '<p>' . t("Kmaps Search and Navigation:  So Helpful!") . '</p>';
             break;
     }
 }
 
-function kmaps_navigator_menu() {
+function kmaps_facets_menu() {
 
   $items = array();
 
-  $items['admin/config/user-interface/kmaps_navigator'] = array(
-    'title' => 'Kmaps Navigator Settings',
-    'description' => 'Configure Kmaps Navigator Module',
+  $items['admin/config/user-interface/kmaps_facets'] = array(
+    'title' => 'Kmaps Facets Settings',
+    'description' => 'Configure Kmaps Facets Module',
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('kmaps_navigator_settings'),
+    'page arguments' => array('kmaps_facets_settings'),
     'access arguments' => array('administer site configuration'),
    );
 
@@ -49,18 +49,18 @@ function kmaps_navigator_menu() {
 
 /**
  * Module Admin form to set number of kmap navigator (facet) blocks for site
- * Get variable by $km_block_ct = variable_get("kmaps_navigator_block_count", 2);
+ * Get variable by $km_block_ct = variable_get("kmaps_facets_block_count", 2);
  */
-function kmaps_navigator_settings(array $form, array &$form_state) {
+function kmaps_facets_settings(array $form, array &$form_state) {
   $form = array();
 
-  $form['kmaps_navigator_block_count'] = array(
+  $form['kmaps_facets_block_count'] = array(
     '#type' => 'textfield',
-    '#title' => t('Number of Navigator Blocks'),
-    '#default_value' => variable_get('kmaps_navigator_block_count', 2),
+    '#title' => t('Number of Kmap Facet Blocks'),
+    '#default_value' => variable_get('kmaps_facets_block_count', 2),
     '#size' => 2,
     '#maxlength' => 2,
-    '#description' => t("The number of Kmap Navigator blocks to have on this site"),
+    '#description' => t("The number of Kmap facet blocks to have on this site"),
     '#required' => TRUE,
   );
 
@@ -70,23 +70,23 @@ function kmaps_navigator_settings(array $form, array &$form_state) {
 /**
  * Validate module settings, block number must be an integer and >= 1
  */
-function kmaps_navigator_settings_validate($form, &$form_state) {
-	$blockct = $form_state['values']['kmaps_navigator_block_count'];
+function kmaps_facets_settings_validate($form, &$form_state) {
+	$blockct = $form_state['values']['kmaps_facets_block_count'];
   if (!is_numeric($blockct)) {
-    form_set_error('kmaps_navigator_block_count', t('You must enter an integer for the number of kmap navigator blocks.'));
+    form_set_error('kmaps_facets_block_count', t('You must enter an integer for the number of Kmap facet blocks.'));
   }
   elseif ($blockct <= 0) {
-    form_set_error('kmaps_navigator_block_count', t('Maximum number of blocks must be at least 1.'));
+    form_set_error('kmaps_facets_block_count', t('Maximum number of blocks must be at least 1.'));
   }
 }
 
 /**
  * Implements hook_block_info().
  */
-function kmaps_navigator_block_info() {
+function kmaps_facets_block_info() {
 	$blocks = array();
-  for ($i = 1; $i <= variable_get("kmaps_navigator_block_count", 2); $i++) {
-    $blocks[$i]['info'] = variable_get('kmaps_navigator_block_name_' . $i, 'Kmaps Navigator ' . $i) . ' (Kmaps Navigator)';
+  for ($i = 1; $i <= variable_get("kmaps_facets_block_count", 2); $i++) {
+    $blocks[$i]['info'] = variable_get('kmaps_facets_block_name_' . $i, 'Kmaps Facets ' . $i) . ' (Kmaps Facets)';
     // We have too many things changing per user, per page to cache.
     $blocks[$i]['cache'] = DRUPAL_NO_CACHE;
   }
@@ -98,17 +98,17 @@ function kmaps_navigator_block_info() {
  *  Creates configure form for each kmap nav block
  */
 
-function kmaps_navigator_block_configure($delta = 1) {
-   $form['kmaps_navigator_block_name_' . $delta] = array(
+function kmaps_facets_block_configure($delta = 1) {
+   $form['kmaps_facets_block_name_' . $delta] = array(
     '#type' => 'textfield',
     '#title' => t('Block name'),
-    '#default_value' => variable_get('kmaps_navigator_block_name_' . $delta, 'Kmaps Navigator Block ' . $delta),
+    '#default_value' => variable_get('kmaps_facets_block_name_' . $delta, 'Kmaps Facet Block ' . $delta),
   );
-  $form['kmaps_navigator_block_type_' . $delta] = array(
+  $form['kmaps_facets_block_type_' . $delta] = array(
     '#type' => 'select',
     '#title' => t('Kmap Tree Type'),
     '#description' => t('Type of Kmap Navigator Tree to Show in Block'),
-    '#default_value' => variable_get('kmaps_navigator_block_type_' . $delta, 'places'),
+    '#default_value' => variable_get('kmaps_facets_block_type_' . $delta, 'places'),
     '#options' => drupal_map_assoc(array('places', 'subjects')),
   );
   return $form;
@@ -118,9 +118,9 @@ function kmaps_navigator_block_configure($delta = 1) {
 /**
  * Implements hook_block_save().
  */
-function kmaps_navigator_block_save($delta, $edit) {
-  variable_set('kmaps_navigator_block_name_' . $delta, $edit['kmaps_navigator_block_name_' . $delta]);
-  variable_set('kmaps_navigator_block_type_' . $delta, $edit['kmaps_navigator_block_type_' . $delta]);
+function kmaps_facets_block_save($delta, $edit) {
+  variable_set('kmaps_facets_block_name_' . $delta, $edit['kmaps_facets_block_name_' . $delta]);
+  variable_set('kmaps_facets_block_type_' . $delta, $edit['kmaps_facets_block_type_' . $delta]);
 }
 
 
@@ -129,25 +129,25 @@ function kmaps_navigator_block_save($delta, $edit) {
  *
  * Prepares the contents of the block.
  */
-function kmaps_navigator_block_view($delta = 1) {
+function kmaps_facets_block_view($delta = 1) {
 	  // Set the block type in Drupal settings
-		$km_type = variable_get('kmaps_navigator_block_type_' . $delta, 'places');
-		drupal_add_js(array('kmaps_navigator' => array("block_" . $delta . "_type" => $km_type)), 'setting');
+		$km_type = variable_get('kmaps_facets_block_type_' . $delta, 'places');
+		drupal_add_js(array('kmaps_facets' => array("block_" . $delta . "_type" => $km_type)), 'setting');
     
-		$block = _kmaps_navigator_block($delta);
+		$block = _kmaps_facets_block($delta);
 		return $block;
 }
 
 /**
  * Helper function to call theme
  */
-function _kmaps_navigator_block($delta) {
-    // error_log("_kmaps_navigator_block helper function...");
+function _kmaps_facets_block($delta) {
+    // error_log("_kmaps_facets_block helper function...");
     // Send delta and block type to template to store in data- attributes. Duplicates Drupal.settings in block_view which we may not need
-    $km_type = variable_get('kmaps_navigator_block_type_' . $delta, 'places');
+    $km_type = variable_get('kmaps_facets_block_type_' . $delta, 'places');
 		$block = array(
         'subject' => '',
-        'content' => theme('kmaps_navigator_block', array(
+        'content' => theme('kmaps_facets_block', array(
             'delta' => $delta, 'kmtype' => $km_type, 'forums' => 'f', 'topics' => 't', 'parents' => 'p'
         )),
     );
@@ -159,17 +159,17 @@ function _kmaps_navigator_block($delta) {
  * Implements hook_theme()
  *
  */
-function kmaps_navigator_theme() {
-    $module_path = drupal_get_path('module', 'kmaps_navigator');
+function kmaps_facets_theme() {
+    $module_path = drupal_get_path('module', 'kmaps_facets');
     $base = array(
         'path' => "{$module_path}/templates",
     );
     $ret = array(
-        'kmaps_navigator_block' => $base + array(
+        'kmaps_facets_block' => $base + array(
                 // I could define here anything I want
                 // It would be called from inside the subpath theme in the module path
                 // as file abc.tpl.php
-                'template' => 'kmaps_navigator_block',
+                'template' => 'kmaps_facets_block',
                 // To override I need file
                 // 'block--<MODULE_NAME>--<DELTA>.tpl.php'
                 // somewhere in my theme's folder
@@ -197,7 +197,7 @@ function kmaps_navigator_theme() {
             )
     );
 
-    // error_log("kmaps_navigator_theme returning: " . print_r($ret,true));
+    // error_log("kmaps_facets_theme returning: " . print_r($ret,true));
 
     return $ret;
 
