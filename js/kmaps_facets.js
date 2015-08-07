@@ -172,18 +172,12 @@
                       	console.log ("no start node");
                       }
                    }
-                   console.log(ctx.tree);
                    var delta = ctx.tree.data.delta;
-                   console.log("Delta: " + delta);
-                   var fdata = Drupal.settings.kmaps_facets["block_" + delta + "_data"];
-                   if (typeof(fdata) == "string") {
-                   	 fdata = JSON.parse(fdata);
-                   }
-                   Drupal.settings.kmaps_facets.block_1_data = JSON.parse(Drupal.settings.kmaps_facets.block_1_data);
+                   var fdata = JSON.parse(Drupal.settings.kmaps_facets["block_" + delta + "_data"]);
                     ctx.tree.filterNodes(function(node) {
-                    	if (node.title.indexOf("Genres") > -1 ) {
+                    	/*if (node.title.indexOf("Genres") > -1 ) {
                     		console.log ("Type of fdata: " + typeof(fdata));
-                    	}
+                    	}*/
                     	var kid = node.key;
                     	if (kid in fdata) {
                     		node.title = node.title +  " (" + fdata[kid].length + ")";
