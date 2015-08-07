@@ -43,16 +43,6 @@ function kmaps_facets_menu() {
     'page arguments' => array('kmaps_facets_settings'),
     'access arguments' => array('administer site configuration'),
    );
-	
-	// API Path to Return All Kmap Subject Data For a Field
-	$items['kmapfacets/facet/info/all'] = array(
-		'title' => 'Kmaps Facets API',
-    'description' => 'Returns all kmap info for a field (test)',
-    'page callback' => 'kmaps_facets_facet_info',
-    'page arguments' => array('field_subject'), // TODO: Generalize field name argument 
-    'access arguments' => TRUE,
-   );
-	
   return $items;
 }
 
@@ -185,7 +175,9 @@ function kmaps_facets_block_save($delta, $edit) {
 function kmaps_facets_block_view($delta = 1) {
 	  // Set the block type in Drupal settings
 		$km_type = variable_get('kmaps_facets_block_type_' . $delta, 'places');
-		drupal_add_js(array('kmaps_facets' => array("block_" . $delta . "_type" => $km_type)), 'setting');
+		$km_data = json_encode(kmaps_facets_facet_info('field_subject'));
+		drupal_add_js(array('kmaps_facets' => array("block_" . $delta . "_type" => $km_type, 
+																							  "block_" . $delta . "_data" => $km_data)), 'setting');
     
 		$block = _kmaps_facets_block($delta);
 		return $block;
@@ -257,6 +249,9 @@ function kmaps_facets_theme() {
 
 }
 
+/**
+ * Creates an array of all kmap data for given field keyed on kmap id with each id having an array of nodes tagged with it
+ */
 function kmaps_facets_facet_info($field_name) {
 	//$fname = 'field_subject';
 	$tbl = 'field_data_' . $field_name;
@@ -267,13 +262,15 @@ function kmaps_facets_facet_info($field_name) {
 	$alltags = $res->fetchAll();
 	$kmapres = array();
 	foreach ($alltags as $tinfo) {
-		$kid = $tinfo->{$col};
+		$anc = shanti_kmaps_fields_get_ancestors($tinfo);;
 		$nid = $tinfo->entity_id;
-		if (isset($kmapres[$kid])) {
-			$kmapres[$kid][] = $nid;
-		} else {
-			$kmapres[$kid] = array($nid);
+		foreach ($anc as $n => $kid) { 
+			if (isset($kmapres[$kid])) {
+				$kmapres[$kid][] = $nid;
+			} else {
+				$kmapres[$kid] = array($nid);
+			}
 		}
 	}
-	drupal_json_output($kmapres);
+	return $kmapres;
 }
