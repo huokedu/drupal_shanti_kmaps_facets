@@ -21,6 +21,23 @@ function kmaps_facets_init() {
 
   //Add Ajax library
   drupal_add_library('system', 'drupal.ajax');
+	
+	// Determine if URL one of block URLS
+	// Iterate through each block checking blocks api url against current url
+	// If match, set filter for that block
+	$mypath = current_path();
+	foreach (kmaps_facets_block_info() as $n => $bi) {
+		$url = variable_get('kmaps_facets_block_api_url_' . $n, FALSE);
+		if ($url) {
+			$url = preg_replace('/^\//', '', $url);
+			$url = str_replace('__KMID__', '(\d+)', $url);
+			$patt = '/' . str_replace('/', '\/', $url) . '/';
+			if (preg_match($patt, $mypath, $matches)) {
+				drupal_add_js(array('kmaps_facets' => array('filter_block' => $n, 'filter_kid' => $matches[1])), 'setting');
+				break;
+			}
+		}
+	}
 }
 
 function kmaps_facets_help($path, $arg) {

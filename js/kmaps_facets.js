@@ -74,7 +74,11 @@
                     var listitem = $("td[kid='" + data.node.key + "']");
                     $('.row_selected').removeClass('row_selected');
                     $(listitem).closest('tr').addClass('row_selected');
-                    console.log("need to write code for node activate");
+                    
+										var delta = $(this).data('delta');
+										var urlpattern = Drupal.settings.kmaps_facets['block_' + delta + '_kmurl'];
+										var url = location.origin + urlpattern.replace('__KMID__', data.node.key);
+										window.location.href = url;
 										/**
                     var url = location.origin + location.pathname.substring(0, location.pathname.indexOf(kmtype)) + kmtype + '/' + data.node.key + '/overview/nojs';
                     $(data.node.span).find('#ajax-id-' + data.node.key).trigger('navigate');
@@ -105,14 +109,6 @@
                 },
                 renderNode: function (event, data) {
                     data.node.span.childNodes[2].innerHTML = '<span id="ajax-id-' + data.node.key + '">' + data.node.title + '</span>';
-                    //console.log("renderNode: " + $(data.node.span).val());
-                    //console.dir(data);
-                    //
-                    //console.log("Status Node? " + data.node.isStatusNode());
-                    //console.log("Loading? " + data.node.isLoading());
-
-                    //console.log(JSON.stringify(event) + ": " + data.node.statusNodeType);
-
                     return data;
                 },
                 glyph: {
@@ -172,15 +168,40 @@
                    }
                    var delta = ctx.tree.data.delta;
                    var fdata = JSON.parse(Drupal.settings.kmaps_facets["block_" + delta + "_data"]);
-                   ctx.tree.filterNodes(function(node) {
-                    	var kid = node.key;
-                    	if (kid in fdata) {
-                    		node.data.hitct = fdata[kid].length;
-                    		node.title = node.title +  " (" + fdata[kid].length + ")";
-                    		return true;
-                    	}
-                    	return false;
-                   });
+                   var fblock = (typeof(Drupal.settings.kmaps_facets.filter_block) == 'undefined') ? false : Drupal.settings.kmaps_facets.filter_block;
+                   if (fblock) {
+                   	var kid = (typeof(Drupal.settings.kmaps_facets.filter_kid) == 'undefined') ? false : Drupal.settings.kmaps_facets.filter_kid;
+                   	if (kid) {
+                   		var knodes = fdata[kid];
+                   		ctx.tree.filterNodes(function(node) {
+	                    	var kid = node.key;
+	                    	if (kid in fdata) {
+	                    		var m = 0;
+											    $(knodes).each(function(n) {
+											        if (fdata[kid].indexOf(knodes[n]) > -1) {
+											            m++;
+											        }   
+											    });
+											    if (m > 0) {
+		                    		node.data.hitct = m;
+		                    		node.title = node.title +  " (" + m + ")";
+		                    		return true;
+		                    	}
+	                    	}
+	                    	return false;
+	                   });
+                   	}
+                   } else { 
+	                   ctx.tree.filterNodes(function(node) {
+	                    	var kid = node.key;
+	                    	if (kid in fdata) {
+	                    		node.data.hitct = fdata[kid].length;
+	                    		node.title = node.title +  " (" + fdata[kid].length + ")";
+	                    		return true;
+	                    	}
+	                    	return false;
+	                   });
+	                 }
                 },
                 cookieId: "kmaps" + $(this).data('delta') + "tree", // set cookies for search-browse tree
                 idPrefix: "kmaps" + $(this).data('delta') + "tree"
