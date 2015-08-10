@@ -166,6 +166,9 @@
                           }
                       }
                    }
+                   // Do not filter tree if view is empty
+                   if ($('.view-empty').length == 1) { return; }
+                   // Tree filtering based on selection
                    var delta = ctx.tree.data.delta;
                    var fdata = JSON.parse(Drupal.settings.kmaps_facets["block_" + delta + "_data"]);
                    var fblock = (typeof(Drupal.settings.kmaps_facets.filter_block) == 'undefined') ? false : Drupal.settings.kmaps_facets.filter_block;
@@ -295,7 +298,7 @@
 
                         // highlight matching text (if/where they occur).
                         var txt = $('#searchform').val();
-                        $('.popover-caption').highlight(txt, {element: 'mark'});
+                        //$('.popover-caption').highlight(txt, {element: 'mark'});
 
                         $.ajax({
                             type: "GET",
@@ -523,7 +526,7 @@
 
                         var txt = $('#searchform').val();
                         // trunk8 as needed.  REALLY there should be one place for adding trunk8 on changes
-                        $("table.table-results tbody td span").highlight(txt, {element: 'mark'}).trunk8({tooltip: false});
+                        //$("table.table-results tbody td span").highlight(txt, {element: 'mark'}).trunk8({tooltip: false});
                     },
 
                     template: function (doc) {
