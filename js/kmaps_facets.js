@@ -168,23 +168,19 @@
                           } catch( e ) { 
                           	console.error ("autoExpand failed", e) ;
                           }
-                      } else {
-                      	console.log ("no start node");
                       }
                    }
                    var delta = ctx.tree.data.delta;
                    var fdata = JSON.parse(Drupal.settings.kmaps_facets["block_" + delta + "_data"]);
-                    ctx.tree.filterNodes(function(node) {
-                    	/*if (node.title.indexOf("Genres") > -1 ) {
-                    		console.log ("Type of fdata: " + typeof(fdata));
-                    	}*/
+                   ctx.tree.filterNodes(function(node) {
                     	var kid = node.key;
                     	if (kid in fdata) {
+                    		node.data.hitct = fdata[kid].length;
                     		node.title = node.title +  " (" + fdata[kid].length + ")";
                     		return true;
                     	}
                     	return false;
-                    });
+                   });
                 },
                 cookieId: "kmaps" + $(this).data('delta') + "tree", // set cookies for search-browse tree
                 idPrefix: "kmaps" + $(this).data('delta') + "tree"
@@ -338,7 +334,7 @@
                                         updates[asset_type] = asset_count;
                                     });
                                     // console.log(key + "(" + title + ") : " + JSON.stringify(updates));
-                                    update_counts(countsElem, updates)
+                                    update_counts(countsElem, updates);
                                 });
                             }
                         });
