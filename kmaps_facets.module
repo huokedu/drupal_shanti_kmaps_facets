@@ -78,7 +78,7 @@ function kmaps_facets_menu() {
     'description' => 'Configure Kmaps Facets Module',
     'page callback' => 'kmap_facets_gallery',
     'page arguments' => array(2, 3),
-    'access arguments' => TRUE,
+    'access arguments' => array('access content'),
    );
   return $items;
 }
