@@ -19,11 +19,11 @@
     <div class="tab-content">
         <!-- TAB - tree view -->
         <div class="treeview tab-pane active">
-            <div id="tree" 
+            <div id="kmtree-<?php echo $delta; ?>" 
             			data-delta="<?php echo $delta; ?>" 
             			data-kmtype="<?php echo $kmtype; ?>" 
             			data-kmroot="<?php echo $kmroot; ?>"
-            			class="view-wrap"><!-- view-wrap controls tree container height --></div>
+            			class="view-wrap kmapfacettree"><!-- view-wrap controls tree container height --></div>
         </div>
         <!-- TAB - list view -->
         <div class="listview tab-pane">

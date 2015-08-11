@@ -40,23 +40,29 @@
     attach: function (context, settings) {
         // add a new function overlayMask
         $('#ftsection').once('fancytree', function () {
-            var theType = Drupal.settings.kmaps_facets.block_1_type;
-            var kmroot = $("#tree").data('kmroot');
-            if (kmroot) { kmroot = '/' + kmroot; }
+        		var theType = Drupal.settings.kmaps_facets.block_1_type;
             var Settings = {
-                type: theType,
-                baseUrl: 'http://' + theType + '.kmaps.virginia.edu',
-                mmsUrl: "http://mms.thlib.org",
-                placesUrl: "http://places.kmaps.virginia.edu", // TODO: These should come from the kmaps admin settings
-                subjectsUrl: "http://subjects.kmaps.virginia.edu",
-                mediabaseURL: "http://mediabase.drupal-test.shanti.virginia.edu" // TODO: Is this necessary? Make a setting?
-            };
+	                type: theType,
+	                baseUrl: 'http://' + theType + '.kmaps.virginia.edu',
+	                mmsUrl: "http://mms.thlib.org",
+	                placesUrl: "http://places.kmaps.virginia.edu", // TODO: These should come from the kmaps admin settings
+	                subjectsUrl: "http://subjects.kmaps.virginia.edu",
+	                mediabaseURL: "http://mediabase.drupal-test.shanti.virginia.edu" // TODO: Is this necessary? Make a setting?
+	            };
+	            
             // search min length
             const SEARCH_MIN_LENGTH = 2;
 
             // $(function () {
-						if ($('#tree').length == 0 ) { console.error("No tree div to apply fancytree too"); return; }
-            $("#tree").fancytree({
+						if ($('.kmapfacettree').length == 0 ) { console.error("No tree div to apply fancytree too"); return; }
+						console.info('km len: ' + $(".kmapfacettree").length);
+            $(".kmapfacettree").each(function() {
+            	var delta = $(this).data('delta');
+              var kmtype = $(this).data('kmtype');
+              var theType = kmtype;
+	            var kmroot = $(this).data('kmroot');
+	            if (kmroot) { kmroot = '/' + kmroot; }
+            	$(this).fancytree({
                 extensions: ["filter", "glyph"],
                 checkbox: false,
                 selectMode: 2,
@@ -129,7 +135,7 @@
                 },
                 source: {
                     //          url: "/fancy_nested.json",
-                    url: Settings.baseUrl + "/features" + kmroot + "/fancy_nested.json?view_code=" + $('nav li.form-group input[name=option2]:checked').val(),
+                    url: Settings.baseUrl + "/features/" + $(this).data('kmroot') + "/fancy_nested.json?view_code=" + $('nav li.form-group input[name=option2]:checked').val(),
                     cache: false,
                     debugDelay: 1000,
                     timeout: 90000,
@@ -167,13 +173,24 @@
                       }
                    }
                    // Do not filter tree if view is empty
-                   if ($('.view-empty').length == 1) { return; }
+                   var kid = (typeof(Drupal.settings.kmaps_facets.filter_kid) == 'undefined') ? false : Drupal.settings.kmaps_facets.filter_kid;
+                   if ($('.view-empty').length == 1) { 
+                   	if (kid) {
+                   		kid = kid + "";
+                   		ctx.tree.getNodeByKey(kid).setExpanded(true);
+                   		var myel = document.getElementById('ajax-id-' + kid);
+                   		var treediv = $('#kmtree-' + delta);
+                   		var eloffset = $(myel).offset().top;
+                   		var treeoffset = treediv.offset().top;
+                   		treediv.scrollTop(eloffset - treeoffset - 10);
+                   	}
+                   	return; 
+                   }
                    // Tree filtering based on selection
                    var delta = ctx.tree.data.delta;
                    var fdata = JSON.parse(Drupal.settings.kmaps_facets["block_" + delta + "_data"]);
                    var fblock = (typeof(Drupal.settings.kmaps_facets.filter_block) == 'undefined') ? false : Drupal.settings.kmaps_facets.filter_block;
                    if (fblock) {
-                   	var kid = (typeof(Drupal.settings.kmaps_facets.filter_kid) == 'undefined') ? false : Drupal.settings.kmaps_facets.filter_kid;
                    	if (kid) {
                    		var knodes = fdata[kid];
                    		ctx.tree.filterNodes(function(node) {
@@ -208,8 +225,8 @@
                 },
                 cookieId: "kmaps" + $(this).data('delta') + "tree", // set cookies for search-browse tree
                 idPrefix: "kmaps" + $(this).data('delta') + "tree"
-            });
-						
+           }); // End of .fancytree();
+				}); // End of each
             $('.advanced-link').click(function () {
                 $(this).toggleClass("show-advanced", 'fast');
                 $(".advanced-view").slideToggle('fast');
@@ -248,7 +265,7 @@
                 //});
 
             });
-
+/*
             // Run when switching to tree view
             $('.treeview').on('shown.bs.tab', function () {
                 var activeNode = $('#tree').fancytree("getTree").getActiveNode();
@@ -256,7 +273,7 @@
                     activeNode.makeVisible();
                 }
             });
-
+*/
 
             function maskSearchResults(isMasked) {
                 var showhide = (isMasked) ? 'show' : 'hide';
@@ -265,7 +282,7 @@
 
             function maskTree(isMasked) {
                 var showhide = (isMasked) ? 'show' : 'hide';
-                $('#tree').overlayMask(showhide);
+                $('.kmapfacettree').overlayMask(showhide);
             }
 
             function decorateElementWithPopover(elem, key, title, path, caption) {
