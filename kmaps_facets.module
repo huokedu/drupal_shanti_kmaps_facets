@@ -228,7 +228,7 @@ function kmaps_facets_block_view($delta = 1) {
 		$km_field =  variable_get('kmaps_facets_block_field_' . $delta, FALSE);
 		$km_url =  variable_get('kmaps_facets_block_api_url_' . $delta, FALSE);
 		//dpm($km_field, 'blocks km field value');
-		$km_data = json_encode(kmaps_facets_facet_info($km_field));
+		$km_data = json_encode(kmaps_facets_facet_info($km_field, TRUE));
 		drupal_add_js(array('kmaps_facets' => array("block_" . $delta . "_type" => $km_type, 
 																							  "block_" . $delta . "_kmurl" => $km_url, 
 																							  "block_" . $delta . "_data" => $km_data)), 'setting');
@@ -247,7 +247,7 @@ function _kmaps_facets_block($delta) {
 		$block = array(
         'subject' => '',
         'content' => theme('kmaps_facets_block', array(
-            'delta' => $delta, 'kmtype' => $kmtype, 'kmroot' => $kmroot, 'forums' => 'f', 'topics' => 't', 'parents' => 'p'
+            'delta' => $delta, 'kmtype' => $kmtype, 'kmroot' => $kmroot
         )),
     );
 //    error_log("returning: " . print_r($block,true));
@@ -278,7 +278,7 @@ function kmaps_facets_theme() {
                 // block--my-module--my-module-block1.tpl.php
 
                 'variables' => array(
-                    'delta' => NULL, 'kmtype' => NULL, 'forums' => NULL, 'topics' => NULL, 'parents' => NULL
+                    'delta' => NULL, 'kmtype' => NULL, 
                 ),
                 '#attached' => array(
                     'libraries_load' => array(
@@ -316,22 +316,22 @@ function kmaps_facets_facet_info($field_name, $tally_ancestors = FALSE) {
 	$kmapres = array();
 	foreach ($alltags as $tinfo) {
 		if ($tally_ancestors) {
-			$anc = shanti_kmaps_fields_get_ancestors($tinfo);;
+			$anc = shanti_kmaps_fields_get_ancestors($tinfo);
 			$nid = $tinfo->entity_id;
-			foreach ($anc as $n => $kid) { 
-				if (isset($kmapres[$kid]) && !in_array($nid, $kmapres[$kid])) {
-					$kmapres[$kid][] = $nid;
-				} else {
+			foreach ($anc as $kid) { 
+				if (!isset($kmapres[$kid])) {
 					$kmapres[$kid] = array($nid);
+				} else if (!in_array($nid, $kmapres[$kid])) {
+					$kmapres[$kid][] = $nid;
 				}
 			}
 		} else {
 			$nid = $tinfo->entity_id;
 			$kid = $tinfo->{$col};
-			if (isset($kmapres[$kid]) && !in_array($nid, $kmapres[$kid])) {
-				$kmapres[$kid][] = $nid;
-			} else {
+			if (!isset($kmapres[$kid])) {
 				$kmapres[$kid] = array($nid);
+			} else if (!in_array($nid, $kmapres[$kid])) {
+				$kmapres[$kid][] = $nid;
 			}
 		}
 	}

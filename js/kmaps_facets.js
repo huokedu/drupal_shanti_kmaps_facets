@@ -39,18 +39,20 @@
   Drupal.behaviors.kmaps_facets = {
     attach: function (context, settings) {
         // add a new function overlayMask
-        $('#ftsection').once('fancytree', function () {
+        $('#search-flyout').once('fancytree', function () {
         		
             // search min length
             const SEARCH_MIN_LENGTH = 2;
 
             // $(function () {
 						if ($('.kmapfacettree').length == 0 ) { console.error("No tree div to apply fancytree too"); return; }
+						
             $(".kmapfacettree").each(function() {
             	var delta = $(this).data('delta');
               var kmtype = $(this).data('kmtype');
               var kmserver = Drupal.settings.shanti_kmaps_admin['shanti_kmaps_admin_server_' + kmtype];
 	            var kmroot = $(this).data('kmroot');
+	            if (kmroot != '') { kmroot = kmroot + "/"; }
             	$(this).fancytree({
                 extensions: ["filter", "glyph"],
                 checkbox: false,
@@ -124,7 +126,7 @@
                 },
                 source: {
                     //          url: "/fancy_nested.json",
-                    url: kmserver + "/features/" + kmroot + "/fancy_nested.json?view_code=" + $('nav li.form-group input[name=option2]:checked').val(),
+                    url: kmserver + "/features/" + kmroot + "fancy_nested.json", //?view_code=" + $('nav li.form-group input[name=option2]:checked').val(),
                     cache: false,
                     debugDelay: 1000,
                     timeout: 90000,
@@ -133,9 +135,18 @@
                     },
                     beforeSend: function () {
                         maskSearchResults(true);
+                        console.log(kmserver + "/features/" + kmroot + "fancy_nested.json"); //+ $('nav li.form-group input[name=option2]:checked').val());
                     },
                     complete: function () {
-                        maskSearchResults(false);
+                    	/*var myurl = this.url;
+                    	console.info("myurl: " + myurl);
+                    	console.log(myurl.indexOf('subjects.'), myurl.indexOf('features/fancy_nested'));
+                    	if (myurl.indexOf('subjects.') > -1 && myurl.indexOf('features/fancy_nested') > -1) {
+                    		console.log("Mdae it");
+	                    	data.responseText = '{"key":"0","title":"Subjects","children":' + data.responseText + "}";
+	                    	data.responseJSON = JSON.parse(data.responseText);
+                    	}*/
+                      maskSearchResults(false);
                     }
                 },
                 focus: function (event, data) {
@@ -174,7 +185,8 @@
                    		treediv.scrollTop(eloffset - treeoffset - 10);
                    	}
                    	return; 
-                   }
+                   } // end of empty view
+                   
                    // Tree filtering based on selection
                    var delta = ctx.tree.data.delta;
                    var fdata = JSON.parse(Drupal.settings.kmaps_facets["block_" + delta + "_data"]);
@@ -211,6 +223,8 @@
 	                    	return false;
 	                   });
 	                 }
+	                 var rchildren = ctx.tree.getFirstChild().getChildren();
+	                 for (n in rchildren) { rchildren[n].setExpanded(false); }
                 },
                 cookieId: "kmaps" + $(this).data('delta') + "tree", // set cookies for search-browse tree
                 idPrefix: "kmaps" + $(this).data('delta') + "tree"
