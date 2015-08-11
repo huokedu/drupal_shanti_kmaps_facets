@@ -40,28 +40,17 @@
     attach: function (context, settings) {
         // add a new function overlayMask
         $('#ftsection').once('fancytree', function () {
-        		var theType = Drupal.settings.kmaps_facets.block_1_type;
-            var Settings = {
-	                type: theType,
-	                baseUrl: 'http://' + theType + '.kmaps.virginia.edu',
-	                mmsUrl: "http://mms.thlib.org",
-	                placesUrl: "http://places.kmaps.virginia.edu", // TODO: These should come from the kmaps admin settings
-	                subjectsUrl: "http://subjects.kmaps.virginia.edu",
-	                mediabaseURL: "http://mediabase.drupal-test.shanti.virginia.edu" // TODO: Is this necessary? Make a setting?
-	            };
-	            
+        		
             // search min length
             const SEARCH_MIN_LENGTH = 2;
 
             // $(function () {
 						if ($('.kmapfacettree').length == 0 ) { console.error("No tree div to apply fancytree too"); return; }
-						console.info('km len: ' + $(".kmapfacettree").length);
             $(".kmapfacettree").each(function() {
             	var delta = $(this).data('delta');
               var kmtype = $(this).data('kmtype');
-              var theType = kmtype;
+              var kmserver = Drupal.settings.shanti_kmaps_admin['shanti_kmaps_admin_server_' + kmtype];
 	            var kmroot = $(this).data('kmroot');
-	            if (kmroot) { kmroot = '/' + kmroot; }
             	$(this).fancytree({
                 extensions: ["filter", "glyph"],
                 checkbox: false,
@@ -108,7 +97,7 @@
                     var theTitle = data.node.title;
                     var theCaption = data.node.data.caption;
 
-                    decorateElementWithPopover(theElem, theKey,theTitle, path,theCaption );
+                    decorateElementWithPopover(theElem, theKey, theType, theTitle, path, theCaption );
                     decorateElemWithDrupalAjax(theElem, theKey, theType);
 
                     return data;
@@ -135,7 +124,7 @@
                 },
                 source: {
                     //          url: "/fancy_nested.json",
-                    url: Settings.baseUrl + "/features/" + $(this).data('kmroot') + "/fancy_nested.json?view_code=" + $('nav li.form-group input[name=option2]:checked').val(),
+                    url: kmserver + "/features/" + kmroot + "/fancy_nested.json?view_code=" + $('nav li.form-group input[name=option2]:checked').val(),
                     cache: false,
                     debugDelay: 1000,
                     timeout: 90000,
@@ -227,6 +216,7 @@
                 idPrefix: "kmaps" + $(this).data('delta') + "tree"
            }); // End of .fancytree();
 				}); // End of each
+				
             $('.advanced-link').click(function () {
                 $(this).toggleClass("show-advanced", 'fast');
                 $(".advanced-view").slideToggle('fast');
@@ -284,9 +274,9 @@
                 var showhide = (isMasked) ? 'show' : 'hide';
                 $('.kmapfacettree').overlayMask(showhide);
             }
-
-            function decorateElementWithPopover(elem, key, title, path, caption) {
-                //console.log("decorateElementWithPopover: "  + elem);
+						
+            function decorateElementWithPopover(elem, key, kmtype, title, path, caption) {
+                var kmserver = Drupal.settings.shanti_kmaps_admin['shanti_kmaps_admin_server_' + kmtype];
                 if (jQuery(elem).popover) {
                     jQuery(elem).attr('rel', 'popover');
                     jQuery(elem).popover({
@@ -319,7 +309,7 @@
 
                         $.ajax({
                             type: "GET",
-                            url: Settings.baseUrl + "/features/" + key + ".xml",
+                            url: kmserver + "/features/" + key + ".xml",
                             dataType: "xml",
                             timeout: 90000,
                             beforeSend: function () {
@@ -329,7 +319,7 @@
                                 countsElem.html("<i class='glyphicon glyphicon-warning-sign' title='" + e.statusText);
                             },
                             success: function (xml) {
-                                Settings.type = (Drupal.settings.kmaps_explorer) ? Drupal.settings.kmaps_explorer.app : "places";
+                                //Settings.type = (Drupal.settings.kmaps_explorer) ? Drupal.settings.kmaps_explorer.app : "places";
 
                                 // force the counts to be evaluated as numbers.
                                 var related_count = Number($(xml).find('related_feature_count').text());
@@ -340,9 +330,9 @@
                                 var document_count = Number($(xml).find('document_count').text());
                                 var subject_count = Number($(xml).find('subject_count').text());
 
-                                if (Settings.type === "places") {
+                                if (kmtype === "places") {
                                     place_count = related_count;
-                                } else if (Settings.type === "subjects") {
+                                } else if (kmtype === "subjects") {
                                     subject_count = related_count;
                                 }
                                 countsElem.html("");
@@ -363,10 +353,10 @@
                                     kmidxBase = 'http://kidx.shanti.virginia.edu/solr/kmindex';
                                     console.error("Drupal.settings.shanti_kmaps_admin.shanti_kmaps_admin_server_solr not defined. using default value: " + kmidxBase);
                                 }
-                                var solrURL = kmidxBase + '/select?q=kmapid:' + Settings.type + '-' + key + project_filter + '&start=0&facets=on&group=true&group.field=asset_type&group.facet=true&group.ngroups=true&group.limit=0&wt=json';
+                                var solrURL = kmidxBase + '/select?q=kmapid:' + kmtype + '-' + key + project_filter + '&start=0&facets=on&group=true&group.field=asset_type&group.facet=true&group.ngroups=true&group.limit=0&wt=json';
                                 // console.log ("solrURL = " + solrURL);
                                 $.get(solrURL, function (json) {
-                                    console.log(json);
+                                    //console.log(json);
                                     var updates = {};
                                     var data = JSON.parse(json);
                                     $.each(data.grouped.asset_type.groups, function (x, y) {
@@ -506,10 +496,24 @@
                     }
                 }
             };
+            
+            
             // SOLR AJAX
             // Adding all the "widgets" to the manager and attaching them to dom elements.
-
+						// TODO: Not currently used in Kmaps Facets, but still defined. Need to assess and use or remove.
             var Manager;
+            
+            // Variables from above, now only used in "deprecated" Solr Manager
+            var theType = Drupal.settings.kmaps_facets.block_1_type;
+            var Settings = {
+                type: theType,
+                baseUrl: 'http://' + theType + '.kmaps.virginia.edu',
+                mmsUrl: "http://mms.thlib.org",
+                placesUrl: "http://places.kmaps.virginia.edu", // TODO: These should come from the kmaps admin settings
+                subjectsUrl: "http://subjects.kmaps.virginia.edu",
+                mediabaseURL: "http://mediabase.drupal-test.shanti.virginia.edu" // TODO: Is this necessary? Make a setting?
+            };
+            
             $(function () {
 
                 AjaxSolr.ResultWidget = AjaxSolr.AbstractWidget.extend({
@@ -581,10 +585,14 @@
                         output += '</tr>';
 
                         var elem = $(output);
-                        decorateElementWithPopover(elem, localid, doc.header, $.makeArray(doc.ancestors.map(function (x) {
+                        
+                        // This whole function is not, I believe, currently used. Setting Type to default Subjects. (ndg)
+                        // TODO: Use this code or remove
+                        var theType = 'subjects';
+                        decorateElementWithPopover(elem, localid, theType, doc.header, $.makeArray(doc.ancestors.map(function (x) {
                             return x;
                         })).join("/"), caption);
-                        decorateElemWithDrupalAjax(elem,localid,Settings.type);
+                        decorateElemWithDrupalAjax(elem,localid,theType);
                         $(elem).on('click',function() {$(elem).trigger('navigate');});
                         return elem;
                     }
@@ -603,7 +611,7 @@
                 }
 
                 Settings.type = (Drupal.settings.kmaps_explorer) ? Drupal.settings.kmaps_explorer.app : "places";
-
+                
                 Manager = new AjaxSolr.Manager({
                     solrUrl: termidx + "/"
                 });
@@ -644,9 +652,6 @@
                     id: 'fancytree',
                     target: '#tree'
                 }));
-
-
-
 
             });
             var kms = $("#searchform"); // the main search input
