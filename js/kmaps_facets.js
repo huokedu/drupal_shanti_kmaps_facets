@@ -52,7 +52,13 @@
               var kmtype = $(this).data('kmtype');
               var kmserver = Drupal.settings.shanti_kmaps_admin['shanti_kmaps_admin_server_' + kmtype];
 	            var kmroot = $(this).data('kmroot');
-	            if (kmroot != '') { kmroot = kmroot + "/"; }
+	            console.log(kmroot);
+	            if (kmroot != '') { kmroot = kmroot + '/'; }
+	            var kmdataurl = kmserver + "/features/" + kmroot + "fancy_nested.json";
+	            if (kmtype == 'subjects' && kmroot == '') { 
+								kmdataurl = Drupal.settings.kmaps_facets.mod_home + '/subjectproxy.php';
+							}
+							console.log("kmdataurl: " + kmdataurl);
             	$(this).fancytree({
                 extensions: ["filter", "glyph"],
                 checkbox: false,
@@ -125,8 +131,7 @@
                     }
                 },
                 source: {
-                    //          url: "/fancy_nested.json",
-                    url: kmserver + "/features/" + kmroot + "fancy_nested.json", //?view_code=" + $('nav li.form-group input[name=option2]:checked').val(),
+                    url: kmdataurl, //?view_code=" + $('nav li.form-group input[name=option2]:checked').val(),
                     cache: false,
                     debugDelay: 1000,
                     timeout: 90000,
@@ -135,17 +140,9 @@
                     },
                     beforeSend: function () {
                         maskSearchResults(true);
-                        console.log(kmserver + "/features/" + kmroot + "fancy_nested.json"); //+ $('nav li.form-group input[name=option2]:checked').val());
+                        //console.log(kmserver + "/features/" + kmroot + "fancy_nested.json"); //+ $('nav li.form-group input[name=option2]:checked').val());
                     },
                     complete: function () {
-                    	/*var myurl = this.url;
-                    	console.info("myurl: " + myurl);
-                    	console.log(myurl.indexOf('subjects.'), myurl.indexOf('features/fancy_nested'));
-                    	if (myurl.indexOf('subjects.') > -1 && myurl.indexOf('features/fancy_nested') > -1) {
-                    		console.log("Mdae it");
-	                    	data.responseText = '{"key":"0","title":"Subjects","children":' + data.responseText + "}";
-	                    	data.responseJSON = JSON.parse(data.responseText);
-                    	}*/
                       maskSearchResults(false);
                     }
                 },

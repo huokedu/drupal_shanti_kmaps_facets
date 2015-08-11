@@ -5,6 +5,7 @@
 */
 
 function kmaps_facets_init() {
+	global $base_url, $base_path;
 	// error_log("loading json2: " . print_r(libraries_load('json2'),true));
 	libraries_load('json2');
   // Need to add debugging (the returned object from libraries_load is the only error logging you ever get)
@@ -26,6 +27,12 @@ function kmaps_facets_init() {
 	// Iterate through each block checking blocks api url against current url
 	// If match, set filter for that block
 	$mypath = current_path();
+	drupal_add_js(array(
+			'kmaps_facets' => array(
+				'mod_home' => $base_url . $base_path . drupal_get_path('module', 'kmaps_facets'),
+			),
+		),
+	'setting');
 	foreach (kmaps_facets_block_info() as $n => $bi) {
 		$url = variable_get('kmaps_facets_block_api_url_' . $n, FALSE);
 		if ($url) {
@@ -33,7 +40,12 @@ function kmaps_facets_init() {
 			$url = str_replace('__KMID__', '(\d+)', $url);
 			$patt = '/' . str_replace('/', '\/', $url) . '/';
 			if (preg_match($patt, $mypath, $matches)) {
-				drupal_add_js(array('kmaps_facets' => array('filter_block' => $n, 'filter_kid' => $matches[1])), 'setting');
+				drupal_add_js(array(
+					'kmaps_facets' => array(
+						'filter_block' => $n, 
+						'filter_kid' => $matches[1],
+					 )
+				), 'setting');
 				break;
 			}
 		}
@@ -59,6 +71,14 @@ function kmaps_facets_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('kmaps_facets_settings'),
     'access arguments' => array('administer site configuration'),
+   );
+	 // Path for Module Settings form
+   $items['kmap/facets/%/%'] = array(
+    'title' => 'Kmaps Facets Settings',
+    'description' => 'Configure Kmaps Facets Module',
+    'page callback' => 'kmap_facets_gallery',
+    'page arguments' => array(2, 3),
+    'access arguments' => TRUE,
    );
   return $items;
 }
@@ -336,4 +356,16 @@ function kmaps_facets_facet_info($field_name, $tally_ancestors = FALSE) {
 		}
 	}
 	return $kmapres;
+}
+
+/**
+ * Display a page of facet results
+ * @param type string
+ * 	The type of facet, either subjects or places
+ * 
+ * @param kid int
+ * 	The kmap id for the facet being displayed.
+ */
+function kmap_facets_gallery($type, $kid) {
+	return "<div><ul><li><b>Type: </b> $type</li><li><b>Kid: </b> $kid</li></div>";
 }
