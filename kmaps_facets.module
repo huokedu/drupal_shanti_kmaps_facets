@@ -243,17 +243,25 @@ function kmaps_facets_block_save($delta, $edit) {
  * Prepares the contents of the block.
  */
 function kmaps_facets_block_view($delta = 1) {
-	  // Set the block type in Drupal settings
-		$km_type = variable_get('kmaps_facets_block_type_' . $delta, 'places');
-		$km_field =  variable_get('kmaps_facets_block_field_' . $delta, FALSE);
-		$km_url =  variable_get('kmaps_facets_block_api_url_' . $delta, FALSE);
-		//dpm($km_field, 'blocks km field value');
-		$km_data = json_encode(kmaps_facets_facet_info($km_field, TRUE));
+  // Set the block type in Drupal settings
+	$km_type = variable_get('kmaps_facets_block_type_' . $delta, 'places');
+	$km_field =  variable_get('kmaps_facets_block_field_' . $delta, FALSE);
+	$km_url =  variable_get('kmaps_facets_block_api_url_' . $delta, FALSE);
+	//dpm($km_field, 'blocks km field value');
+	$km_data = json_encode(kmaps_facets_facet_info($km_field, TRUE));
+	$block = array();
+	if ($km_field) {
 		drupal_add_js(array('kmaps_facets' => array("block_" . $delta . "_type" => $km_type, 
 																							  "block_" . $delta . "_kmurl" => $km_url, 
 																							  "block_" . $delta . "_data" => $km_data)), 'setting');
 		$block = _kmaps_facets_block($delta);
-		return $block;
+	} else {
+		$block = array(
+	    'subject' => '',
+	    'content' => '<p>No Field Defined for Kmaps Facet Block ' . $delta . '</p>',
+	  );
+	}
+	return $block;
 }
 
 /**
@@ -325,8 +333,8 @@ function kmaps_facets_theme() {
 /**
  * Creates an array of all kmap data for given field keyed on kmap id with each id having an array of nodes tagged with it
  */
-function kmaps_facets_facet_info($field_name, $tally_ancestors = FALSE) {
-	//$fname = 'field_subject';
+function kmaps_facets_facet_info($field_name = FALSE, $tally_ancestors = FALSE) {
+	if (!$field_name) { return FALSE; }
 	$tbl = 'field_data_' . $field_name;
 	$col = $field_name . '_id';
 	
