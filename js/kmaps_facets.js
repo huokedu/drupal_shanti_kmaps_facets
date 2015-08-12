@@ -220,7 +220,9 @@
 	                    	return false;
 	                   });
 	                 }
-	                 var rchildren = ctx.tree.getFirstChild().getChildren();
+	                 var troot = ctx.tree.getFirstChild();
+	                 troot.visit(function(node) { node.setExpanded(false); });
+	                 var rchildren = troot.getChildren();
 	                 for (n in rchildren) { rchildren[n].setExpanded(false); }
                 },
                 cookieId: "kmaps" + $(this).data('delta') + "tree", // set cookies for search-browse tree
