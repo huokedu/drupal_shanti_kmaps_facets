@@ -74,8 +74,8 @@ function kmaps_facets_menu() {
    );
 	 // Path for Module Settings form
    $items['kmap/facets/%/%'] = array(
-    'title' => 'Kmaps Facets Settings',
-    'description' => 'Configure Kmaps Facets Module',
+    'title' => '',
+    'description' => 'Kmap Facet Search',
     'page callback' => 'kmap_facets_gallery',
     'page arguments' => array(2, 3),
     'access arguments' => array('access content'),
@@ -368,12 +368,35 @@ function kmaps_facets_facet_info($field_name = FALSE, $tally_ancestors = FALSE) 
 
 /**
  * Display a page of facet results
- * @param type string
- * 	The type of facet, either subjects or places
+ * @param $delta int
+ * 	The delta number of the block from which the facet came
  * 
- * @param kid int
+ * @param $kid int
  * 	The kmap id for the facet being displayed.
  */
-function kmap_facets_gallery($type, $kid) {
-	return "<div><ul><li><b>Type: </b> $type</li><li><b>Kid: </b> $kid</li></div>";
+function kmap_facets_gallery($delta, $kid) {
+	// Look up the km field associated with that block
+	$km_field =  variable_get('kmaps_facets_block_field_' . $delta, FALSE);
+	if ($km_field) {
+		$tbl = 'field_data_' . $km_field;
+		$field = $km_field . "_raw";
+		$kidst = "%<{$kid}>%";
+		$query = db_select($tbl, 't')->fields('t', array('entity_id'))->condition($field, $kidst, 'LIKE');
+		$rows = $query->distinct()->execute();
+		$ct = $rows->rowCount();
+		$out = "<div><h2>Test of Facet Query</h2>";
+		$out .= "<p><b>Field: </b> $field</p>";
+		$out .= "<p>These are {$ct} nodes with that kmap id ($kid): <p>";
+		$out .= "<blockquote>";
+		$res = array();
+		foreach($rows as $row) {
+			$r = (array)$row;
+			$res[] = $r['entity_id'];
+		}
+		$out .= implode(', ', $res) . '</blockquote></div>';
+		return $out;
+	} else {
+		drupal_set_message("Sorry, something went wrong with the Kmaps Facet search. Please check the URL.", "warning");
+		drupal_not_found();
+	}
 }
