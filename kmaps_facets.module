@@ -375,27 +375,49 @@ function kmaps_facets_facet_info($field_name = FALSE, $tally_ancestors = FALSE) 
  * 	The kmap id for the facet being displayed.
  */
 function kmap_facets_gallery($delta, $kid) {
-	// Look up the km field associated with that block
+	// Get Block & Kmap Info
+	module_load_include('inc', 'shanti_kmaps_fields', 'shanti_kmaps_fields.kmaps_api');
+	$block = block_load('kmaps_facets', $delta);
+	$km_domain = variable_get('kmaps_facets_block_type_' . $delta, FALSE);
 	$km_field =  variable_get('kmaps_facets_block_field_' . $delta, FALSE);
+	$km_title = shanti_kmaps_fields_get_title_by_id($km_domain, $kid);
 	if ($km_field) {
+		// Do the database query on that field for unique nodes
 		$tbl = 'field_data_' . $km_field;
 		$field = $km_field . "_raw";
+		$kpath = $km_field . "_path";
 		$kidst = "%<{$kid}>%";
-		$query = db_select($tbl, 't')->fields('t', array('entity_id'))->condition($field, $kidst, 'LIKE');
-		$rows = $query->distinct()->execute();
-		$ct = $rows->rowCount();
-		$out = "<div><h2>Test of Facet Query</h2>";
-		$out .= "<p><b>Field: </b> $field</p>";
-		$out .= "<p>These are {$ct} nodes with that kmap id ($kid): <p>";
-		$out .= "<blockquote>";
-		$res = array();
+		$query = db_select($tbl, 't')
+			->fields('t', array('entity_id'))->condition($field, $kidst, 'LIKE')
+			->distinct();
+		$allrows = $query->execute();
+		$count = $allrows->rowCount();
+		$query = db_select($tbl, 't')->extend('PagerDefault')->element(0)
+			->fields('t', array('entity_id', $kpath))->condition($field, $kidst, 'LIKE')
+			->limit(30)->distinct();
+		$rows = $query->execute();
+		// Create the page build
+		drupal_set_title($block->title . ": " . $km_title);
+		$build['initdesc'] = array('#markup' => t('<p>@count items are tagged with @kmaptype, "@kmaptitle":</p>',
+				array('@count' => $count, '@kmaptype' => $block->title, '@kmaptitle' => $km_title)));
+		$gallery = '<ul class="shanti-gallery">';
 		foreach($rows as $row) {
-			$r = (array)$row;
-			$res[] = $r['entity_id'];
+			if (!$ancestors) { $ancestors = $row->{$kpath};}
+			$nid = $row->entity_id;
+			$gallery .= render(node_view(node_load($nid),'teaser'));
 		}
-		$out .= implode(', ', $res) . '</blockquote></div>';
-		return $out;
+		$gallery .= '</ul>';
+		$build['gallery'] = array('#markup' => $gallery);
+		
+		// Add pager to build using the sites core override preset pager
+		$build['pagerer_mini_0'] = array(
+	    '#theme' => 'pagerer',
+	    '#preset' => _pagerer_get_variable('core_override_preset'),
+	    '#element' => 0,
+	  );
+		return $build;
 	} else {
+		// If no field associated with designated block, send warning and page not found
 		drupal_set_message("Sorry, something went wrong with the Kmaps Facet search. Please check the URL.", "warning");
 		drupal_not_found();
 	}

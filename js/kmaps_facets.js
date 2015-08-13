@@ -81,8 +81,7 @@
                     $(listitem).closest('tr').addClass('row_selected');
                     
 										var delta = $(this).data('delta');
-										var urlpattern = Drupal.settings.kmaps_facets['block_' + delta + '_kmurl'];
-										var url = location.origin + urlpattern.replace('__KMID__', data.node.key);
+										var url = Drupal.settings.basePath + 'kmap/facets/' + delta + '/' + data.node.key; // Path for gallery defined in .module document
 										window.location.href = url;
 										/**
                     var url = location.origin + location.pathname.substring(0, location.pathname.indexOf(kmtype)) + kmtype + '/' + data.node.key + '/overview/nojs';
