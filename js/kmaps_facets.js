@@ -52,13 +52,15 @@
               var kmtype = $(this).data('kmtype');
               var kmserver = Drupal.settings.shanti_kmaps_admin['shanti_kmaps_admin_server_' + kmtype];
 	            var kmroot = $(this).data('kmroot');
-	            console.log(kmroot);
 	            if (kmroot != '') { kmroot = kmroot + '/'; }
 	            var kmdataurl = kmserver + "/features/" + kmroot + "fancy_nested.json";
 	            if (kmtype == 'subjects' && kmroot == '') { 
-								kmdataurl = Drupal.settings.kmaps_facets.mod_home + '/subjectproxy.php';
+	            	var sserv = (Drupal.settings.shanti_kmaps_admin && 
+	            								Drupal.settings.shanti_kmaps_admin.shanti_kmaps_admin_server_subjects) ? 
+	            									Drupal.settings.shanti_kmaps_admin.shanti_kmaps_admin_server_subjects : 
+	            										'http://subjects.kmaps.virginia.edu';
+								kmdataurl = Drupal.settings.kmaps_facets.mod_home + '/subjectproxy.php?server=' + sserv;
 							}
-							console.log("kmdataurl: " + kmdataurl);
             	$(this).fancytree({
                 extensions: ["filter", "glyph"],
                 checkbox: false,
