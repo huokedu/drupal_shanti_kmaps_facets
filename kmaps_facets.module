@@ -26,30 +26,12 @@ function kmaps_facets_init() {
 	// Determine if URL one of block URLS
 	// Iterate through each block checking blocks api url against current url
 	// If match, set filter for that block
-	$mypath = current_path();
 	drupal_add_js(array(
 			'kmaps_facets' => array(
 				'mod_home' => $base_url . $base_path . drupal_get_path('module', 'kmaps_facets'),
 			),
 		),
 	'setting');
-	foreach (kmaps_facets_block_info() as $n => $bi) {
-		$url = variable_get('kmaps_facets_block_api_url_' . $n, FALSE);
-		if ($url) {
-			$url = preg_replace('/^\//', '', $url);
-			$url = str_replace('__KMID__', '(\d+)', $url);
-			$patt = '/' . str_replace('/', '\/', $url) . '/';
-			if (preg_match($patt, $mypath, $matches)) {
-				drupal_add_js(array(
-					'kmaps_facets' => array(
-						'filter_block' => $n, 
-						'filter_kid' => $matches[1],
-					 )
-				), 'setting');
-				break;
-			}
-		}
-	}
 }
 
 function kmaps_facets_help($path, $arg) {
@@ -73,10 +55,10 @@ function kmaps_facets_menu() {
     'access arguments' => array('administer site configuration'),
    );
 	 // Path for Module Settings form
-   $items['kmap/facets/%/%'] = array(
+   $items['kmaps/facets/%/%'] = array(
     'title' => '',
     'description' => 'Kmap Facet Search',
-    'page callback' => 'kmap_facets_gallery',
+    'page callback' => 'kmaps_facets_gallery',
     'page arguments' => array(2, 3),
     'access arguments' => array('access content'),
    );
@@ -166,14 +148,6 @@ function kmaps_facets_block_configure($delta = 1) {
     '#default_value' => variable_get('kmaps_facets_block_field_' . $delta, FALSE),
   );
 	
-	
-  $form['kmaps_facets_block_api_url_' . $delta] = array(
-    '#type' => 'textfield',
-    '#title' => t('API Url for Links From Tree'),
-    '#description' => t('Enter the pattern for URLs to show list of items tagged by kmap id, using __KMID__ to indicate where the Kmap Id goes.'),
-    '#default_value' => variable_get('kmaps_facets_block_api_url_' . $delta, ''),
-  );
-	
   return $form;
 }
 
@@ -233,7 +207,6 @@ function kmaps_facets_block_save($delta, $edit) {
 	if ($edit['kmaps_facets_block_root_' . $delta] == "") { $edit['kmaps_facets_block_root_' . $delta] = FALSE; }
   variable_set('kmaps_facets_block_root_' . $delta, $edit['kmaps_facets_block_root_' . $delta]);
 	variable_set('kmaps_facets_block_field_' . $delta, $edit['kmaps_facets_block_field_' . $delta]);
-	variable_set('kmaps_facets_block_api_url_' . $delta, $edit['kmaps_facets_block_api_url_' . $delta]);
 }
 
 
@@ -245,22 +218,13 @@ function kmaps_facets_block_save($delta, $edit) {
 function kmaps_facets_block_view($delta = 1) {
   // Set the block type in Drupal settings
 	$km_type = variable_get('kmaps_facets_block_type_' . $delta, 'places');
-	$km_field =  variable_get('kmaps_facets_block_field_' . $delta, FALSE);
-	$km_url =  variable_get('kmaps_facets_block_api_url_' . $delta, FALSE);
 	//dpm($km_field, 'blocks km field value');
-	$km_data = json_encode(kmaps_facets_facet_info($km_field, TRUE));
+	$km_data = json_encode(kmaps_facets_facet_info($delta, TRUE));
 	$block = array();
-	if ($km_field) {
-		drupal_add_js(array('kmaps_facets' => array("block_" . $delta . "_type" => $km_type, 
-																							  "block_" . $delta . "_kmurl" => $km_url, 
-																							  "block_" . $delta . "_data" => $km_data)), 'setting');
-		$block = _kmaps_facets_block($delta);
-	} else {
-		$block = array(
-	    'subject' => '',
-	    'content' => '<p>No Field Defined for Kmaps Facet Block ' . $delta . '</p>',
-	  );
-	}
+	drupal_add_js(array('kmaps_facets' => array("block_" . $delta . "_type" => $km_type, 
+																						  "block_" . $delta . "_data" => $km_data)), 'setting');
+	$block = _kmaps_facets_block($delta);
+	
 	return $block;
 }
 
@@ -331,41 +295,71 @@ function kmaps_facets_theme() {
 }
 
 /**
- * Creates an array of all kmap data for given field keyed on kmap id with each id having an array of nodes tagged with it
+ * Creates an array of all kmap data for given block by delta on kmap id with each id having an array of nodes tagged with it
  */
-function kmaps_facets_facet_info($field_name = FALSE, $tally_ancestors = FALSE) {
-	if (!$field_name) { return FALSE; }
-	$tbl = 'field_data_' . $field_name;
-	$col = $field_name . '_id';
-	
-	$q = db_select($tbl, 't')->fields('t'); //, array('entity_id', $col)
-	$res = $q->execute();
-	$alltags = $res->fetchAll();
+function kmaps_facets_facet_info($delta, $tally_ancestors = TRUE) {
+	$field_name =  variable_get('kmaps_facets_block_field_' . $delta, FALSE);
 	$kmapres = array();
-	foreach ($alltags as $tinfo) {
-		if ($tally_ancestors) {
-			$anc = shanti_kmaps_fields_get_ancestors($tinfo);
-			$nid = $tinfo->entity_id;
-			foreach ($anc as $kid) { 
+	if ($field_name) { 
+		$tbl = 'field_data_' . $field_name;
+		$col = $field_name . '_id';
+		
+		$q = db_select($tbl, 't')->fields('t'); //, array('entity_id', $col)
+		$filters = _kmaps_facets_get_filter_info();
+		if (is_array($filters[$delta])) {
+			foreach($filters[$delta] as $kid) {
+				$q->condition($field_name . '_raw', "%<{$kid}>%", "LIKE");
+			}
+		}
+		$res = $q->execute();
+		$alltags = $res->fetchAll();
+		
+		foreach ($alltags as $tinfo) {
+			if ($tally_ancestors) {
+				$anc = shanti_kmaps_fields_get_ancestors($tinfo);
+				$nid = $tinfo->entity_id;
+				foreach ($anc as $kid) { 
+					if (!isset($kmapres[$kid])) {
+						$kmapres[$kid] = array($nid);
+					} else if (!in_array($nid, $kmapres[$kid])) {
+						$kmapres[$kid][] = $nid;
+					}
+				}
+			} else {
+				$nid = $tinfo->entity_id;
+				$kid = $tinfo->{$col};
 				if (!isset($kmapres[$kid])) {
 					$kmapres[$kid] = array($nid);
 				} else if (!in_array($nid, $kmapres[$kid])) {
 					$kmapres[$kid][] = $nid;
 				}
 			}
-		} else {
-			$nid = $tinfo->entity_id;
-			$kid = $tinfo->{$col};
-			if (!isset($kmapres[$kid])) {
-				$kmapres[$kid] = array($nid);
-			} else if (!in_array($nid, $kmapres[$kid])) {
-				$kmapres[$kid][] = $nid;
-			}
 		}
+	} else {
+		watchdog('kmaps_facets', "Kmaps Facet Block $delta does not have a field associated with it. Cannot show tree!");
 	}
 	return $kmapres;
 }
 
+/**
+ * Get filter info from the url
+ */
+function _kmaps_facets_get_filter_info() {
+	$mypath = current_path();
+	$fctstr = str_replace('kmaps/facets/', '', $mypath);
+	$fctpts = explode('/', $fctstr);
+	$facets = array();
+	for($n = 0; $n < count($fctpts) - 1; $n += 2) {
+		$bn = $fctpts[$n];
+		$kid = $fctpts[$n+1];
+		if (is_array($facets[$bn])) {
+			$facets[$bn][] = $kid;
+		} else {
+			$facets[$bn] = array($kid);
+		}
+	}
+} 
+ 
 /**
  * Display a page of facet results
  * @param $delta int
@@ -374,13 +368,14 @@ function kmaps_facets_facet_info($field_name = FALSE, $tally_ancestors = FALSE) 
  * @param $kid int
  * 	The kmap id for the facet being displayed.
  */
-function kmap_facets_gallery($delta, $kid) {
+function kmaps_facets_gallery($delta, $kid) {
 	// Get Block & Kmap Info
 	module_load_include('inc', 'shanti_kmaps_fields', 'shanti_kmaps_fields.kmaps_api');
 	$block = block_load('kmaps_facets', $delta);
 	$km_domain = variable_get('kmaps_facets_block_type_' . $delta, FALSE);
 	$km_field =  variable_get('kmaps_facets_block_field_' . $delta, FALSE);
 	$km_title = shanti_kmaps_fields_get_title_by_id($km_domain, $kid);
+	
 	if ($km_field) {
 		// Do the database query on that field for unique nodes
 		$tbl = 'field_data_' . $km_field;
@@ -393,10 +388,10 @@ function kmap_facets_gallery($delta, $kid) {
 		$allrows = $query->execute();
 		$count = $allrows->rowCount();
 		$query = db_select($tbl, 't')->extend('PagerDefault')->element(0)
-			->fields('t', array('entity_id', $kpath))->condition($field, $kidst, 'LIKE')
-			->limit(30)->distinct();
+			->fields('t', array('entity_id'))->condition($field, $kidst, 'LIKE')->distinct()->limit(30);
 		$rows = $query->execute();
 		// Create the page build
+		$facets = array(); // START
 		drupal_set_title($block->title . ": " . $km_title);
 		$build['initdesc'] = array('#markup' => t('<p>@count items are tagged with @kmaptype, "@kmaptitle":</p>',
 				array('@count' => $count, '@kmaptype' => $block->title, '@kmaptitle' => $km_title)));
@@ -404,7 +399,8 @@ function kmap_facets_gallery($delta, $kid) {
 		foreach($rows as $row) {
 			if (!$ancestors) { $ancestors = $row->{$kpath};}
 			$nid = $row->entity_id;
-			$gallery .= render(node_view(node_load($nid),'teaser'));
+			$node = node_load($nid);
+			$gallery .= render(node_view($node,'teaser'));
 		}
 		$gallery .= '</ul>';
 		$build['gallery'] = array('#markup' => $gallery);
@@ -420,5 +416,22 @@ function kmap_facets_gallery($delta, $kid) {
 		// If no field associated with designated block, send warning and page not found
 		drupal_set_message("Sorry, something went wrong with the Kmaps Facet search. Please check the URL.", "warning");
 		drupal_not_found();
+	}
+}
+
+function kmaps_facets_process_facets(&$facets, $node, $km_field) {
+	$fi = field_get_items('node', $node, $km_field);
+	$nid = $node->nid;
+	foreach ($fi as $n => $item) {
+		$ancestors = shanti_kmaps_fields_process_raw($item['raw']);
+		foreach ($ancestors as $n => $kid) {
+			if (is_array($facets[$kid])) {
+				if (!in_array($nid, $facets[$kid])) {
+					$facets[$kid][] = $nid;
+				}
+			} else {
+				$facets[$kid] = array($nid);
+			}
+		}
 	}
 }
