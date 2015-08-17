@@ -187,52 +187,31 @@
                    
                    // Tree filtering based on selection
                    var delta = ctx.tree.data.delta;
+                   var fkid = (Drupal.settings.kmaps_facets.facet_info["block-" + delta] == 0) ? false : Drupal.settings.kmaps_facets.facet_info["block-" + delta];
                    var fdata = JSON.parse(Drupal.settings.kmaps_facets["block_" + delta + "_data"]);
-                   var fblock = (typeof(Drupal.settings.kmaps_facets.filter_block) == 'undefined') ? false : Drupal.settings.kmaps_facets.filter_block;
-                   if (fblock) {
-                   	if (kid) {
-                   		var knodes = fdata[kid];
-                   		ctx.tree.filterNodes(function(node) {
-	                    	var kid = node.key;
-	                    	if (kid in fdata) {
-	                    		var m = 0;
-											    $(knodes).each(function(n) {
-											        if (fdata[kid].indexOf(knodes[n]) > -1) {
-											            m++;
-											        }   
-											    });
-											    if (m > 0) {
-		                    		node.data.hitct = m;
-		                    		node.title = node.title +  " (" + m + ")";
-		                    		return true;
-		                    	}
-	                    	}
-	                    	return false;
-	                   });
-                   	}
-                   } else { 
-	                   ctx.tree.filterNodes(function(node) {
+                   // Filter tree in block based on that blocks facet data saved as a Drupal JSON setting
+	                 ctx.tree.filterNodes(function(node) {
 	                    	var kid = node.key;
 	                    	if (kid in fdata) {
 	                    		node.data.hitct = fdata[kid].length;
 	                    		node.title = node.title +  " (" + fdata[kid].length + ")";
+	                    		if (kid == fkid) {
+	                    				node.title = node.title + ' <a href="' + Drupal.settings.basePath + '" class="facet-remove">' +
+	                    				'<span class="icon shanticon-cancel"></span></a>';
+	                    		}
 	                    		return true;
 	                    	}
 	                    	return false;
-	                   });
-	                 }
-	                 // Collapse all but immediate children of root
-	                 var troot = ctx.tree.getFirstChild();
-	                 troot.visit(function(node) { node.setExpanded(false); });
-	                 // Expand any selected facets
-	                 var fkid = Drupal.settings.kmaps_facets.facet_info["block-" + delta];
-	                 if (parseInt(fkid) > 0) {
-		        				 var selnode = ctx.tree.getNodeByKey(fkid.toString());
-		        				 if (selnode) { selnode.setFocus(true);}
-		        			 } else {
-		                 var rchildren = troot.getChildren();
-		                 for (n in rchildren) { rchildren[n].setExpanded(false);}
-		        			 }
+	                 });
+	                
+	                 if (fkid) {
+	                 	   // If there's a chosen facet, show that blocks tab
+		                   $('.kmaps-facets-' + delta + ' a').tab('show');  // Show the tab in flyout with the facetted block
+	                 } else {
+	                 	   // With no facet collapse tree to immediate children of root child
+		                   var troot = ctx.tree.getFirstChild();
+		                   troot.visit(function(node) {  node.setExpanded(false); });
+		               }
                 },
                 cookieId: "kmaps" + $(this).data('delta') + "tree", // set cookies for search-browse tree
                 idPrefix: "kmaps" + $(this).data('delta') + "tree"
