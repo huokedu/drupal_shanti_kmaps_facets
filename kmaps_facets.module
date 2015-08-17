@@ -295,6 +295,40 @@ function kmaps_facets_theme() {
 }
 
 /**
+ * New Search Flyout Preprocess used with Shanti_Kmap_facets 
+ * When used with a Shanti Sarvaka based theme in the search flyout region, 
+ * this sets up the proper code for use with the fancy tree JS library.
+ */
+function kmaps_facets_preprocess_region(&$vars) {
+	if($vars['region'] == 'search_flyout') {
+		// For search flyout in mediabase, sniff out facet api blocks so that they can be placed in tabs
+		$elements = $vars['elements'];
+		$children = element_children($elements);
+		$facets_done = FALSE;
+		$facetmu = '<div class="tab-content">';
+		$facettabs = '<section class="view-section"><ul class="nav nav-tabs">'; 
+		$fct = 0;
+		foreach($children as $ename) {
+			if(strpos($ename, 'kmaps_facets') > -1) {
+				$el = $elements[$ename];
+				$flabel = $el['#block']->title;
+				$fct++;
+				$srflabel = str_replace('_', '-', $ename);
+				$active = ($fct == 1) ? " active":"";
+				$bcnt = $el['#markup'];
+				$facetmu .= "<div class=\"km-facet-div {$srflabel} treeview tab-pane{$active}\">{$bcnt}</div>";
+				$facettabs .= "<li class=\"km-facet-tab {$srflabel}{$active}\"><a href=\".{$srflabel}\" data-toggle=\"tab\">" . 
+												"{$flabel}</a></li>";
+			} 
+		}
+		$facetmu .= '</div>';
+		$facettabs .= '</ul>';
+		$facetmu = $facettabs . $facetmu . '</section>';  
+		$vars['facetcnt'] = $facetmu;
+	}
+}
+
+/**
  * Creates an array of all kmap data for given block by delta on kmap id with each id having an array of nodes tagged with it
  */
 function kmaps_facets_facet_info($delta, $tally_ancestors = TRUE) {
