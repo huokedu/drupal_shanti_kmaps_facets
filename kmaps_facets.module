@@ -307,7 +307,7 @@ function kmaps_facets_facet_info($delta, $tally_ancestors = TRUE) {
 		$q = db_select($tbl, 't')->fields('t'); //, array('entity_id', $col)
 		$filters = _kmaps_facets_get_filter_info();
 		$active_facet = 0;
-		if (is_array($filters[$delta])) {
+		if (isset($filters[$delta]) && is_array($filters[$delta])) {
 			foreach($filters[$delta] as $kid) {
 				$q->condition($field_name . '_raw', "%<{$kid}>%", "LIKE");
 				$active_facet = $kid;
