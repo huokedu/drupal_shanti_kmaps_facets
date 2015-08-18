@@ -97,7 +97,9 @@
                     //console.log("STATUS NODE: " + data.node.isStatusNode());
                     //data.node.span.childNodes[2].innerHTML = '<span id="ajax-id-' + data.node.key + '">' + data.node.title + '</span>';
                     var path = $.makeArray(data.node.getParentList(false, true).map(function (x) {
-                        return x.title;
+                    		var ptitle = x.title;
+                    		if (m = ptitle.match(/([^\(]+)\(\d+\)/)) { ptitle = m[1]; }
+                        return ptitle;
                     })).join("/");
 
                     var theElem = data.node.span;
@@ -307,12 +309,15 @@
                         // highlight matching text (if/where they occur).
                         var txt = $('#searchform').val();
                         //$('.popover-caption').highlight(txt, {element: 'mark'});
-
+												var kmtype = $(elem).parents('.kmapfacettree').data('kmtype');
+												var kmserver = Drupal.settings.shanti_kmaps_admin['shanti_kmaps_admin_server_' + kmtype];
                         $.ajax({
                             type: "GET",
                             url: kmserver + "/features/" + key + ".xml",
                             dataType: "xml",
                             timeout: 90000,
+                            kmtype: kmtype,
+                            kmkey: key,
                             beforeSend: function () {
                                 countsElem.html("<span class='assoc-resources-loading'>loading...</span>");
                             },
@@ -345,7 +350,6 @@
 
                             },
                             complete: function () {
-
                                 var fq = Drupal.settings.shanti_kmaps_admin.shanti_kmaps_admin_solr_filter_query;
 
                                 var project_filter = (fq)?("&" + fq):"";
@@ -354,7 +358,7 @@
                                     kmidxBase = 'http://kidx.shanti.virginia.edu/solr/kmindex';
                                     console.error("Drupal.settings.shanti_kmaps_admin.shanti_kmaps_admin_server_solr not defined. using default value: " + kmidxBase);
                                 }
-                                var solrURL = kmidxBase + '/select?q=kmapid:' + kmtype + '-' + key + project_filter + '&start=0&facets=on&group=true&group.field=asset_type&group.facet=true&group.ngroups=true&group.limit=0&wt=json';
+                                var solrURL = kmidxBase + '/select?q=kmapid:' + this.kmtype + '-' + this.kmkey + project_filter + '&start=0&facets=on&group=true&group.field=asset_type&group.facet=true&group.ngroups=true&group.limit=0&wt=json';
                                 // console.log ("solrURL = " + solrURL);
                                 $.get(solrURL, function (json) {
                                     //console.log(json);
