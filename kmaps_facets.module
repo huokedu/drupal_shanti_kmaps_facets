@@ -450,7 +450,7 @@ function kmaps_facets_process_facets(&$facets, $node, $km_field) {
 	$fi = field_get_items('node', $node, $km_field);
 	$nid = $node->nid;
 	foreach ($fi as $n => $item) {
-		$ancestors = shanti_kmaps_fields_process_raw($item['raw']);
+		$ancestors = shanti_kmaps_fields_parse_raw($item['raw']);
 		foreach ($ancestors as $n => $kid) {
 			if (is_array($facets[$kid])) {
 				if (!in_array($nid, $facets[$kid])) {
