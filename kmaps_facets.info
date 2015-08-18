@@ -6,7 +6,10 @@ version = 1.0-alpha
 dependencies[] = libraries (>=2.1)
 dependencies[] = fancytree
 dependencies[] = ajaxsolr
-dependencies[] = shanti_kmaps_fields  ; at preset (08/2015), it must be the AV-MANU-19 branch of that repo
+
+; at present (08/2015), shanti_kmaps_fields must be the AV-MANU-19 branch of that repo
+dependencies[] = shanti_kmaps_fields  
+
 configure = admin/config/user-interface/kmaps_facets
 
 ; JS Added in module init. CSS is empty right now.
