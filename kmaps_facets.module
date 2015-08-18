@@ -6,29 +6,18 @@
 
 function kmaps_facets_init() {
 	global $base_url, $base_path;
-	// error_log("loading json2: " . print_r(libraries_load('json2'),true));
 	libraries_load('json2');
-  // Need to add debugging (the returned object from libraries_load is the only error logging you ever get)
-  //error_log("loading fancytree: " . print_r(libraries_load('fancytree','source'),true));
 	$res = libraries_load('fancytree','source');
-  //error_log("loading ajaxsolr: " . print_r(libraries_load('ajaxsolr'), true));
   libraries_load('ajaxsolr');
-  drupal_add_js(drupal_get_path('module', 'kmaps_facets') . "/js/kmaps_facets.js",array(
-      'group' => JS_THEME,
-  ));
-  // drupal_add_js("https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js",array('type' => 'external'));
-  // drupal_add_css("https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css",array('type' => 'external'));
-  // drupal_add_css("https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css",array('type' => 'external'));
-
-  //Add Ajax library
-  drupal_add_library('system', 'drupal.ajax');
+  drupal_add_library('system', 'drupal.ajax'); //Add Ajax library
 	
-	// Determine if URL one of block URLS
-	// Iterate through each block checking blocks api url against current url
-	// If match, set filter for that block
+	$modhome = drupal_get_path('module', 'kmaps_facets');
+	drupal_add_css($modhome . "/css/kmaps_facets.css");
+  drupal_add_js($modhome . "/js/kmaps_facets.js",array( 'group' => JS_THEME, ));
+	
 	drupal_add_js(array(
 			'kmaps_facets' => array(
-				'mod_home' => $base_url . $base_path . drupal_get_path('module', 'kmaps_facets'),
+				'mod_home' => $base_url . $base_path . $modhome,
 			),
 		),
 	'setting');
@@ -142,7 +131,7 @@ function kmaps_facets_block_configure($delta = 1) {
 	
   $form['kmaps_facets_block_field_' . $delta] = array(
     '#type' => 'select',
-    '#title' => t('Drupal Facet Field'),
+    '#title' => t('Kmaps Facet Field'),
     '#description' => t('Choose which Drupal Kmaps field to display counts for'),
     '#options' => kmaps_facets_get_kmap_field_list(),
     '#default_value' => variable_get('kmaps_facets_block_field_' . $delta, FALSE),
