@@ -3,42 +3,11 @@
  */
 
 (function ($) {
-
-    $.fn.overlayMask = function (action) {
-        var mask = this.find('.overlay-mask');
-
-        // Create the required mask
-        if (!mask.length) {
-            mask = $('<div class="overlay-mask"><div class="loading-container"><div class="loading"></div><div id="loading-text">Searching&#133;</div></div></div>');
-            mask.css({
-                position: 'absolute',
-                width: '100%',
-                height: '100%',
-                top: '0px',
-                left: '0px',
-                zIndex: 100,
-                opacity: 9,
-                backgrogroundColor: 'white'
-            }).appendTo(this).fadeTo(0, 0.5).find('div').position({
-                my: 'center center',
-                at: 'center center',
-                of: '.overlay-mask'
-            });
-        }
-
-        // Act based on params
-
-        if (!action || action === 'show') {
-            mask.show();
-        } else if (action === 'hide') {
-            mask.hide();
-        }
-        return this;
-    };
+	
+/* $.fn.overlayMask function moved to shanti-sarvaka/shanti-main.js  */
 
   Drupal.behaviors.kmaps_facets = {
     attach: function (context, settings) {
-        // add a new function overlayMask
         $('#search-flyout').once('fancytree', function () {
         		
             // search min length
@@ -48,6 +17,7 @@
 						if ($('.kmapfacettree').length == 0 ) { console.error("No tree div to apply fancytree too"); return; }
 						
             $(".kmapfacettree").each(function() {
+            	var me = $(this);
             	var delta = $(this).data('delta');
               var kmtype = $(this).data('kmtype');
               var kmserver = Drupal.settings.shanti_kmaps_admin['shanti_kmaps_admin_server_' + kmtype];
@@ -61,6 +31,7 @@
 	            										'http://subjects.kmaps.virginia.edu';
 								kmdataurl = Drupal.settings.kmaps_facets.mod_home + '/subjectproxy.php?server=' + sserv;
 							}
+							
             	$(this).fancytree({
                 extensions: ["filter", "glyph"],
                 checkbox: false,
@@ -142,11 +113,12 @@
                         notify.warn("networkerror", "Error retrieving tree from kmaps server. Error: " + e.message);
                     },
                     beforeSend: function () {
-                        maskSearchResults(true);
+                        maskSearchResults(me, true);
                         //console.log(kmserver + "/features/" + kmroot + "fancy_nested.json"); //+ $('nav li.form-group input[name=option2]:checked').val());
                     },
                     complete: function () {
-                      maskSearchResults(false);
+                      // (false);
+                      maskSearchResults(me, false);
                     }
                 },
                 focus: function (event, data) {
@@ -268,9 +240,9 @@
             });
 */
 
-            function maskSearchResults(isMasked) {
+            function maskSearchResults(self, isMasked) {
                 var showhide = (isMasked) ? 'show' : 'hide';
-                $('.view-section>.tab-content').overlayMask(showhide);
+                $(self).overlayMask(showhide);
             }
 
             function maskTree(isMasked) {
