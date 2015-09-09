@@ -326,6 +326,7 @@ function kmaps_facets_facet_info($delta, $tally_ancestors = TRUE) {
 	if ($field_name) { 
 		$tbl = 'field_data_' . $field_name;
 		$col = $field_name . '_id';
+		$raw = $field_name . '_raw';
 		
 		$q = db_select($tbl, 't')->fields('t'); //, array('entity_id', $col)
 		$filters = _kmaps_facets_get_filter_info();
@@ -342,12 +343,12 @@ function kmaps_facets_facet_info($delta, $tally_ancestors = TRUE) {
 		
 		foreach ($alltags as $tinfo) {
 			if ($tally_ancestors) {
-				$anc = shanti_kmaps_fields_get_ancestors($tinfo);
+				$anc = shanti_kmaps_fields_parse_raw($tinfo->{$raw});
 				$nid = $tinfo->entity_id;
 				foreach ($anc as $kid) { 
 					if (!isset($kmapres[$kid])) {
 						$kmapres[$kid] = array($nid);
-					} else if (!in_array($nid, $kmapres[$kid])) {
+					} else {
 						$kmapres[$kid][] = $nid;
 					}
 				}
@@ -356,10 +357,13 @@ function kmaps_facets_facet_info($delta, $tally_ancestors = TRUE) {
 				$kid = $tinfo->{$col};
 				if (!isset($kmapres[$kid])) {
 					$kmapres[$kid] = array($nid);
-				} else if (!in_array($nid, $kmapres[$kid])) {
+				} else {
 					$kmapres[$kid][] = $nid;
 				}
 			}
+		}
+		foreach ($kmapres as $key => $karray) {
+			$kmapres[$key] = array_unique($karray);
 		}
 	} else {
 		watchdog('kmaps_facets', "Kmaps Facet Block $delta does not have a field associated with it. Cannot show tree!");
@@ -453,12 +457,13 @@ function kmaps_facets_process_facets(&$facets, $node, $km_field) {
 		$ancestors = shanti_kmaps_fields_parse_raw($item['raw']);
 		foreach ($ancestors as $n => $kid) {
 			if (is_array($facets[$kid])) {
-				if (!in_array($nid, $facets[$kid])) {
-					$facets[$kid][] = $nid;
-				}
+				$facets[$kid][] = $nid;
 			} else {
 				$facets[$kid] = array($nid);
 			}
 		}
+	}
+	foreach ($facets as $kid => $karray) {
+		$facets[$kid] = array_unique($karray);
 	}
 }
