@@ -167,8 +167,14 @@
 	                 ctx.tree.filterNodes(function(node) {
 	                    	var kid = node.key;
 	                    	if (kid in fdata) {
-	                    		node.data.hitct = fdata[kid].length;
-	                    		node.title = node.title +  " (" + fdata[kid].length + ")";
+	                    		hct = fdata[kid].length;
+	                    		// Map object to array so it can be counted (should be used)
+	                    		if (typeof(fdata[kid]) == "object") {
+	                    			var farray = jQuery.map(fdata[kid], function(val, ind) { return [val];});
+	                    			hct = farray.length;
+	                    		}
+	                    		node.data.hitct = hct;
+	                    		node.title = node.title +  " (" + hct + ")";
 	                    		if (kid == fkid) {
 	                    				node.title = node.title + ' <a href="' + Drupal.settings.basePath + '" class="facet-remove">' +
 	                    				'<span class="icon shanticon-cancel"></span></a>';

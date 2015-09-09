@@ -346,24 +346,17 @@ function kmaps_facets_facet_info($delta, $tally_ancestors = TRUE) {
 				$anc = shanti_kmaps_fields_parse_raw($tinfo->{$raw});
 				$nid = $tinfo->entity_id;
 				foreach ($anc as $kid) { 
-					if (!isset($kmapres[$kid])) {
-						$kmapres[$kid] = array($nid);
-					} else {
-						$kmapres[$kid][] = $nid;
-					}
+					$kmapres[$kid][] = $nid;
 				}
 			} else {
 				$nid = $tinfo->entity_id;
 				$kid = $tinfo->{$col};
-				if (!isset($kmapres[$kid])) {
-					$kmapres[$kid] = array($nid);
-				} else {
-					$kmapres[$kid][] = $nid;
-				}
+				$kmapres[$kid][] = $nid;
 			}
 		}
 		foreach ($kmapres as $key => $karray) {
-			$kmapres[$key] = array_unique($karray);
+			$univals = array_unique($karray);
+			$kmapres[$key] = array_values($univals);
 		}
 	} else {
 		watchdog('kmaps_facets', "Kmaps Facet Block $delta does not have a field associated with it. Cannot show tree!");
