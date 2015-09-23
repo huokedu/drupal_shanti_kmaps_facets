@@ -15,7 +15,7 @@ var kmap_facets_loaded = false;
 
             // $(function () {
 						if ($('.kmapfacettree').length == 0 ) { console.error("No tree div to apply fancytree too"); return; }
-						jQuery('#search-flyout .flap').click(function() {kmaps_facets_load();});
+						jQuery('#search-flyout .flap').hover(function() {kmaps_facets_load();});
             
 				
             $('.advanced-link').click(function () {
