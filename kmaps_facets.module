@@ -43,6 +43,16 @@ function kmaps_facets_menu() {
     'page arguments' => array('kmaps_facets_settings'),
     'access arguments' => array('administer site configuration'),
    );
+   
+   // Path for the kmap tree by block
+   $items['kmaps/facettree/block/%'] = array(
+    'title' => '',
+    'description' => 'Return data for a block tree',
+    'page callback' => 'kmaps_facets_block_tree',
+    'page arguments' => array(3),
+    'access arguments' => array('access content'),
+   );
+   
 	 // Path for Module Settings form
    $items['kmaps/facets/%/%'] = array(
     'title' => '',
@@ -207,8 +217,7 @@ function kmaps_facets_block_save($delta, $edit) {
 function kmaps_facets_block_view($delta = 1) {
   // Set the block type in Drupal settings
 	$km_type = variable_get('kmaps_facets_block_type_' . $delta, 'places');
-	//dpm($km_field, 'blocks km field value');
-	$km_data = json_encode(kmaps_facets_facet_info($delta, TRUE));
+    $km_data = json_encode(kmaps_facets_facet_info($delta, TRUE));
 	$block = array();
 	drupal_add_js(array('kmaps_facets' => array("block_" . $delta . "_type" => $km_type, 
 																						  "block_" . $delta . "_data" => $km_data)), 'setting');
@@ -228,7 +237,7 @@ function _kmaps_facets_block($delta) {
 		$block = array(
         'subject' => '',
         'content' => theme('kmaps_facets_block', array(
-            'delta' => $delta, 'kmtype' => $kmtype, 'kmroot' => $kmroot
+            'delta' => $delta, 'kmtype' => $kmtype, 'kmroot' => $kmroot, 'treeurl' => url('kmaps/facettree/block/' . $delta, array('absolute' => TRUE))
         )),
     );
 //    error_log("returning: " . print_r($block,true));
@@ -282,6 +291,30 @@ function kmaps_facets_theme() {
     return $ret;
 
 }
+
+/**
+ * Returns data for the tree in each block
+ */
+ function kmaps_facets_block_tree($delta) {
+     global $base_url;
+     $cache_name = "kmaps_facet_tree_block_{$delta}";
+     if ($cache = cache_get($cache_name)) {
+         drupal_json_output(json_decode($cache->data));
+     } else {
+         $km_type = variable_get('kmaps_facets_block_type_' . $delta, 'places');
+         $km_root = variable_get('kmaps_facets_block_root_' . $delta, FALSE);
+         $admin_vars = shanti_kmaps_admin_get_vars();
+         $server = $admin_vars['shanti_kmaps_admin_server_' . $km_type];
+         if ($km_root != '') { $km_root .= '/'; }
+         $dataurl = $server . "/features/" . $km_root . "fancy_nested.json";
+         if ($km_type == 'subjects' && $km_root == '') {
+             $dataurl = $base_url . '/' . drupal_get_path('module', 'kmaps_facets') .  '/subjectproxy.php?server=' . $server;
+         }
+         $json_data = file_get_contents($dataurl);
+         cache_set($cache_name, $json_data, 'cache');
+         drupal_json_output(json_decode($json_data));
+     }
+ }
 
 /**
  * New Search Flyout Preprocess used with Shanti_Kmap_facets 

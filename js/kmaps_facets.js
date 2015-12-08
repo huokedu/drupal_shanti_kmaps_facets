@@ -14,10 +14,10 @@ var kmap_facets_loaded = false;
             const SEARCH_MIN_LENGTH = 2;
 
             // $(function () {
-						if ($('.kmapfacettree').length == 0 ) { console.error("No tree div to apply fancytree too"); return; }
-						jQuery('#search-flyout .flap').hover(function() {kmaps_facets_load();});
+			if ($('.kmapfacettree').length == 0 ) { console.error("No tree div to apply fancytree too"); return; }
+			kmaps_facets_load(); // load facet trees
             
-				
+//				console.log('loading trees....');
             $('.advanced-link').click(function () {
                 $(this).toggleClass("show-advanced", 'fast');
                 $(".advanced-view").slideToggle('fast');
@@ -335,186 +335,196 @@ var kmap_facets_loaded = false;
 		if (kmap_facets_loaded) { return;}
 		kmap_facets_loaded = true;
 		$(".kmapfacettree").each(function() {
-	  	var me = $(this);
-	  	var delta = $(this).data('delta');
-	    var kmtype = $(this).data('kmtype');
-	    var kmserver = Drupal.settings.shanti_kmaps_admin['shanti_kmaps_admin_server_' + kmtype];
-	    var kmroot = $(this).data('kmroot');
-	    if (kmroot != '') { kmroot = kmroot + '/'; }
-	    var kmdataurl = kmserver + "/features/" + kmroot + "fancy_nested.json";
-	    if (kmtype == 'subjects' && kmroot == '') { 
-	    	var sserv = (Drupal.settings.shanti_kmaps_admin && 
-	    								Drupal.settings.shanti_kmaps_admin.shanti_kmaps_admin_server_subjects) ? 
-	    									Drupal.settings.shanti_kmaps_admin.shanti_kmaps_admin_server_subjects : 
-	    										'http://subjects.kmaps.virginia.edu';
-				kmdataurl = Drupal.settings.kmaps_facets.mod_home + '/subjectproxy.php?server=' + sserv;
-			}
-			
-	  	$(this).fancytree({
-	      extensions: ["filter", "glyph"],
-	      checkbox: false,
-	      selectMode: 2,
-	      theme: 'bootstrap',
-	      debugLevel: 1,
-	      // autoScroll: true,
-	      autoScroll: false,
-	      filter: {
-	          mode: "hide",
-	          leavesOnly: false
-	      },
-	      activate: function (event, data) {
-	          kmtype = $(this).data('kmtype');
-	          // event.preventDefault();
-	          var listitem = $("td[kid='" + data.node.key + "']");
-	          $('.row_selected').removeClass('row_selected');
-	          $(listitem).closest('tr').addClass('row_selected');
-	          
-						var delta = $(this).data('delta');
-						var url = Drupal.settings.basePath + 'kmaps/facets/' + delta + '/' + data.node.key; // Path for gallery defined in .module document
-						window.location.href = url;
-						/**
-	          var url = location.origin + location.pathname.substring(0, location.pathname.indexOf(kmtype)) + kmtype + '/' + data.node.key + '/overview/nojs';
-	          $(data.node.span).find('#ajax-id-' + data.node.key).trigger('navigate');
-	          */
-	      },
-	      createNode: function (event, data) {
-	          //console.log("createNode: " + data.node.span)
-	          //console.dir(data);
-	
-	          data.node.span.childNodes[2].innerHTML = '<span id="ajax-id-' + data.node.key + '">' + data.node.title + '</span>';
-	
-	          //console.log("STATUS NODE: " + data.node.isStatusNode());
-	          //data.node.span.childNodes[2].innerHTML = '<span id="ajax-id-' + data.node.key + '">' + data.node.title + '</span>';
-	          var path = $.makeArray(data.node.getParentList(false, true).map(function (x) {
-	          		var ptitle = x.title;
-	          		if (m = ptitle.match(/([^\(]+)\(\d+\)/)) { ptitle = m[1]; }
-	              return ptitle;
-	          })).join("/");
-	
-	          var theElem = data.node.span;
-	          var theKey = data.node.key;
-	          var theType = $(this).data('kmtype');
-	          var theTitle = data.node.title;
-	          var theCaption = data.node.data.caption;
-	
-	          decorateElementWithPopover(theElem, theKey, theType, theTitle, path, theCaption );
-	          decorateElemWithDrupalAjax(theElem, theKey, theType);
-	
-	          return data;
-	      },
-	      renderNode: function (event, data) {
-	          data.node.span.childNodes[2].innerHTML = '<span id="ajax-id-' + data.node.key + '">' + data.node.title + '</span>';
-	          return data;
-	      },
-	      glyph: {
-	          map: {
-	              doc: "",
-	              docOpen: "",
-	              error: "glyphicon glyphicon-warning-sign",
-	              expanderClosed: "glyphicon glyphicon-plus-sign",
-	              expanderLazy: "glyphicon glyphicon-plus-sign",
-	              // expanderLazy: "glyphicon glyphicon-expand",
-	              expanderOpen: "glyphicon glyphicon-minus-sign",
-	              // expanderOpen: "glyphicon glyphicon-collapse-down",
-	              folder: "",
-	              folderOpen: "",
-	              loading: "glyphicon glyphicon-refresh"
-	              //              loading: "icon-spinner icon-spin"
-	          }
-	      },
-	      source: {
-	          url: kmdataurl, //?view_code=" + $('nav li.form-group input[name=option2]:checked').val(),
-	          cache: false,
-	          debugDelay: 1000,
-	          timeout: 90000,
-	          error: function (e) {
-	              notify.warn("networkerror", "Error retrieving tree from kmaps server. Error: " + e.message);
-	          },
-	          beforeSend: function () {
-	              maskSearchResults(me, true);
-	              //console.log(kmserver + "/features/" + kmroot + "fancy_nested.json"); //+ $('nav li.form-group input[name=option2]:checked').val());
-	          },
-	          complete: function () {
-	            // (false);
-	            maskSearchResults(me, false);
-	          }
-	      },
-	      focus: function (event, data) {
-	          data.node.scrollIntoView(true);
-	      },
-	      create: function(evt,ctx) {
-	          //console.log("EVENT: Create");
-	          //console.dir(evt);
-	          //console.dir(ctx);
-	      },
-	
-	      loadChildren: function(evt,ctx) {
-					var startId = 'ajax-id-' + $(this).data('kmroot');
-					var delta = $(this).data('delta');
-					if (startId) {
-	            var startNode = ctx.tree.getRootNode();
-	            if (startNode) {
-	                try {
-	                    startNode.children[0].setExpanded(true);
-	                    startNode.children[0].makeVisible();
-	                } catch( e ) { 
-	                	console.error ("autoExpand failed", e) ;
-	                }
-	            }
-	         }
-	         // Do not filter tree if view is empty
-	         var kid = (typeof(Drupal.settings.kmaps_facets.filter_kid) == 'undefined') ? false : Drupal.settings.kmaps_facets.filter_kid;
-	         if ($('.view-empty').length == 1) { 
-	         	if (kid) {
-	         		kid = kid + "";
-	         		ctx.tree.getNodeByKey(kid).setExpanded(true);
-	         		var myel = document.getElementById('ajax-id-' + kid);
-	         		var treediv = $('#kmtree-' + delta);
-	         		var eloffset = $(myel).offset().top;
-	         		var treeoffset = treediv.offset().top;
-	         		treediv.scrollTop(eloffset - treeoffset - 10);
-	         	}
-	         	return; 
-	         } // end of empty view
-	         
-	         // Tree filtering based on selection
-	         var delta = ctx.tree.data.delta;
-	         var fkid = (Drupal.settings.kmaps_facets.facet_info["block-" + delta] == 0) ? false : Drupal.settings.kmaps_facets.facet_info["block-" + delta];
-	         var fdata = JSON.parse(Drupal.settings.kmaps_facets["block_" + delta + "_data"]);
-	         // Filter tree in block based on that blocks facet data saved as a Drupal JSON setting
-	         ctx.tree.filterNodes(function(node) {
-	            	var kid = node.key;
-	            	if (kid in fdata) {
-	            		hct = fdata[kid].length;
-	            		// Map object to array so it can be counted (should be used)
-	            		if (typeof(fdata[kid]) == "object") {
-	            			var farray = jQuery.map(fdata[kid], function(val, ind) { return [val];});
-	            			hct = farray.length;
-	            		}
-	            		node.data.hitct = hct;
-	            		node.title = node.title +  " (" + hct + ")";
-	            		if (kid == fkid) {
-	            				node.title = node.title + ' <a href="' + Drupal.settings.basePath + '" class="facet-remove">' +
-	            				'<span class="icon shanticon-cancel"></span></a>';
-	            		}
-	            		return true;
-	            	}
-	            	return false;
-	         });
-	        
-	         if (fkid) {
-	         	   // If there's a chosen facet, show that blocks tab
-	             $('.kmaps-facets-' + delta + ' a').tab('show');  // Show the tab in flyout with the facetted block
-	         } else {
-	         	   // With no facet collapse tree to immediate children of root child
-	             var troot = ctx.tree.getFirstChild();
-	             troot.visit(function(node) {  node.setExpanded(false); });
-	         }
-	      },
-	      cookieId: "kmaps" + $(this).data('delta') + "tree", // set cookies for search-browse tree
-	      idPrefix: "kmaps" + $(this).data('delta') + "tree"
+        	  	var me = $(this);
+        	  	var delta = $(this).data('delta');
+        	    var kmtype = $(this).data('kmtype');
+        	    var kmserver = Drupal.settings.shanti_kmaps_admin['shanti_kmaps_admin_server_' + kmtype];
+        	    var kmroot = $(this).data('kmroot');
+        	    if (kmroot != '') { kmroot = kmroot + '/'; }
+        	    var kmdataurl = $(this).data("kmurl");
+        	    /*var kmdataurl = kmserver + "/features/" + kmroot + "fancy_nested.json";
+        	    if (kmtype == 'subjects' && kmroot == '') { 
+        	        var sserv = (Drupal.settings.shanti_kmaps_admin && 
+        	    								Drupal.settings.shanti_kmaps_admin.shanti_kmaps_admin_server_subjects) ? 
+        	    									Drupal.settings.shanti_kmaps_admin.shanti_kmaps_admin_server_subjects : 
+        	    										'http://subjects.kmaps.virginia.edu';
+        				kmdataurl = Drupal.settings.kmaps_facets.mod_home + '/subjectproxy.php?server=' + sserv;
+        		}*/
+//        		console.log(kmdataurl);
+        	  	$(this).fancytree({
+        	      extensions: ["filter", "glyph"],
+        	      checkbox: false,
+        	      selectMode: 2,
+        	      theme: 'bootstrap',
+        	      debugLevel: 1,
+        	      // autoScroll: true,
+        	      autoScroll: false,
+        	      filter: {
+        	          mode: "hide",
+        	          leavesOnly: false
+        	      },
+        	      activate: function (event, data) {
+        	          kmtype = $(this).data('kmtype');
+        	          // event.preventDefault();
+        	          var listitem = $("td[kid='" + data.node.key + "']");
+        	          $('.row_selected').removeClass('row_selected');
+        	          $(listitem).closest('tr').addClass('row_selected');
+        	          
+        						var delta = $(this).data('delta');
+        						var url = Drupal.settings.basePath + 'kmaps/facets/' + delta + '/' + data.node.key; // Path for gallery defined in .module document
+        						window.location.href = url;
+        						/**
+        	          var url = location.origin + location.pathname.substring(0, location.pathname.indexOf(kmtype)) + kmtype + '/' + data.node.key + '/overview/nojs';
+        	          $(data.node.span).find('#ajax-id-' + data.node.key).trigger('navigate');
+        	          */
+        	      },
+        	      createNode: function (event, data) {
+        	          //console.log("createNode: " + data.node.span)
+        	          //console.dir(data);
+        	
+        	          data.node.span.childNodes[2].innerHTML = '<span id="ajax-id-' + data.node.key + '">' + data.node.title + '</span>';
+        	
+        	          //console.log("STATUS NODE: " + data.node.isStatusNode());
+        	          //data.node.span.childNodes[2].innerHTML = '<span id="ajax-id-' + data.node.key + '">' + data.node.title + '</span>';
+        	          var path = $.makeArray(data.node.getParentList(false, true).map(function (x) {
+        	          		var ptitle = x.title;
+        	          		if (m = ptitle.match(/([^\(]+)\(\d+\)/)) { ptitle = m[1]; }
+        	              return ptitle;
+        	          })).join("/");
+        	
+        	          var theElem = data.node.span;
+        	          var theKey = data.node.key;
+        	          var theType = $(this).data('kmtype');
+        	          var theTitle = data.node.title;
+        	          var theCaption = data.node.data.caption;
+        	
+        	          decorateElementWithPopover(theElem, theKey, theType, theTitle, path, theCaption );
+        	          decorateElemWithDrupalAjax(theElem, theKey, theType);
+        	
+        	          return data;
+        	      },
+        	      renderNode: function (event, data) {
+        	          data.node.span.childNodes[2].innerHTML = '<span id="ajax-id-' + data.node.key + '">' + data.node.title + '</span>';
+        	          return data;
+        	      },
+        	      glyph: {
+        	          map: {
+        	              doc: "",
+        	              docOpen: "",
+        	              error: "glyphicon glyphicon-warning-sign",
+        	              expanderClosed: "glyphicon glyphicon-plus-sign",
+        	              expanderLazy: "glyphicon glyphicon-plus-sign",
+        	              // expanderLazy: "glyphicon glyphicon-expand",
+        	              expanderOpen: "glyphicon glyphicon-minus-sign",
+        	              // expanderOpen: "glyphicon glyphicon-collapse-down",
+        	              folder: "",
+        	              folderOpen: "",
+        	              loading: "glyphicon glyphicon-refresh"
+        	              //              loading: "icon-spinner icon-spin"
+        	          }
+        	      },
+        	      source: {
+        	          url: kmdataurl, //?view_code=" + $('nav li.form-group input[name=option2]:checked').val(),
+        	          cache: false,
+        	          debugDelay: 1000,
+        	          timeout: 90000,
+        	          error: function (e) {
+        	              notify.warn("networkerror", "Error retrieving tree from kmaps server. Error: " + e.message);
+        	          },
+        	          beforeSend: function () {
+        	              maskSearchResults(me, true);
+        	              //console.log(kmserver + "/features/" + kmroot + "fancy_nested.json"); //+ $('nav li.form-group input[name=option2]:checked').val());
+        	          },
+        	          complete: function () {
+        	            // (false);
+        	            maskSearchResults(me, false);
+        	          }
+        	      },
+        	      focus: function (event, data) {
+        	          data.node.scrollIntoView(true);
+        	      },
+        	      create: function(evt,ctx) {
+        	          //console.log("EVENT: Create");
+        	          //console.dir(evt);
+        	          //console.dir(ctx);
+        	      },
+        	
+        	      loadChildren: function(evt,ctx) {
+        					var startId = 'ajax-id-' + $(this).data('kmroot');
+        					var delta = $(this).data('delta');
+        					if (startId) {
+        	            var startNode = ctx.tree.getRootNode();
+        	            if (startNode) {
+        	                try {
+        	                    startNode.children[0].setExpanded(true);
+        	                    startNode.children[0].makeVisible();
+        	                } catch( e ) { 
+        	                	console.error ("autoExpand failed", e) ;
+        	                }
+        	            }
+        	         }
+        	         // Do not filter tree if view is empty
+        	         var kid = (typeof(Drupal.settings.kmaps_facets.filter_kid) == 'undefined') ? false : Drupal.settings.kmaps_facets.filter_kid;
+        	         if ($('.view-empty').length == 1) { 
+        	         	if (kid) {
+        	         		kid = kid + "";
+        	         		ctx.tree.getNodeByKey(kid).setExpanded(true);
+        	         		var myel = document.getElementById('ajax-id-' + kid);
+        	         		var treediv = $('#kmtree-' + delta);
+        	         		var eloffset = $(myel).offset().top;
+        	         		var treeoffset = treediv.offset().top;
+        	         		treediv.scrollTop(eloffset - treeoffset - 10);
+        	         	}
+        	         	return; 
+        	         } // end of empty view
+        	         
+        	         // Tree filtering based on selection
+        	         if (typeof(Drupal.settings.kmaps_facets.facet_info) != "undefined") {
+            	         var delta = ctx.tree.data.delta;
+            	         var fkid = (Drupal.settings.kmaps_facets.facet_info["block-" + delta] == 0) ? false : Drupal.settings.kmaps_facets.facet_info["block-" + delta];
+            	         var fdata = JSON.parse(Drupal.settings.kmaps_facets["block_" + delta + "_data"]);
+            	         // Filter tree in block based on that blocks facet data saved as a Drupal JSON setting
+            	         ctx.tree.filterNodes(function(node) {
+            	            	var kid = node.key;
+            	            	if (kid in fdata) {
+            	            		hct = fdata[kid].length;
+            	            		// Map object to array so it can be counted (should be used)
+            	            		if (typeof(fdata[kid]) == "object") {
+            	            			var farray = jQuery.map(fdata[kid], function(val, ind) { return [val];});
+            	            			hct = farray.length;
+            	            		}
+            	            		node.data.hitct = hct;
+            	            		node.title = node.title +  " (" + hct + ")";
+            	            		if (kid == fkid) {
+            	            				node.title = node.title + ' <a href="' + Drupal.settings.basePath + '" class="facet-remove">' +
+            	            				'<span class="icon shanticon-cancel"></span></a>';
+            	            		}
+            	            		return true;
+            	            	}
+            	            	return false;
+            	         });
+            	        
+            	         if (!fkid) {
+            	         	   // With no facet collapse tree to immediate children of root child
+            	             var troot = ctx.tree.getFirstChild();
+            	             troot.visit(function(node) {  node.setExpanded(false); });
+            	         }
+            	     } else { console.warn("No facet info set in kmaps_facets.js"); }
+        	      },
+        	      cookieId: "kmaps" + $(this).data('delta') + "tree", // set cookies for search-browse tree
+        	      idPrefix: "kmaps" + $(this).data('delta') + "tree"
 	 		}); // End of .fancytree();
 		}); // End of each
+		setTimeout(function() {
+		    $(".kmapfacettree").each(function() {
+                   var delta = $(this).data('delta');
+    		           var fkid = (Drupal.settings.kmaps_facets.facet_info["block-" + delta] == 0) ? false : Drupal.settings.kmaps_facets.facet_info["block-" + delta];
+                    if (fkid) {
+                        $('.kmaps-facets-' + delta + ' a').tab('show');  // Show the tab in flyout with the facetted block
+                        jQuery('.flap').click();
+                    }
+             });
+	    }, 500);
 	}
 
 	function maskSearchResults(self, isMasked) {
