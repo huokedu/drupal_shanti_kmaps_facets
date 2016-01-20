@@ -322,7 +322,7 @@ var kmap_facets_loaded = [false, false, false];
 	function kmaps_facets_load(n) {
 		if (n == "undefined" || isNaN(n) || kmap_facets_loaded[n]) { return;}
         kmap_facets_loaded[n] = true;
-        console.log("loading facet block " + n);
+        //console.log("loading facet block " + n);
 		$(".kmapfacettree").eq(n).each(function() {
         	  	var me = $(this);
         	  	var delta = $(this).data('delta');
