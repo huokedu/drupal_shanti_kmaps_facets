@@ -8,7 +8,33 @@ var kmap_facets_loaded = [false, false, false];
 	
   Drupal.behaviors.kmaps_facets = {
     attach: function (context, settings) {
-        
+        // If facet info is set because page is show facet results open the search flyout to that tab
+       if (Drupal.settings.kmaps_facets.facet_info) {
+           for (var n in Drupal.settings.kmaps_facets.facet_info) {
+               if (Drupal.settings.kmaps_facets.facet_info[n] > 0) {
+                   var cl = "." + n.replace('block', 'kmaps-facets'); // turn block-1 into .kmaps-facets-1
+                   var bn = $(cl).prevAll('li').length;
+                   kmaps_facets_load(bn);
+                   $(cl + ' a').tab('show');
+                   if ( !$('#search-flyout').hasClass("isOpened") ) {
+                        $('#search-flyout .flap').click();
+                    }
+               }
+           }
+       }
+       
+       // If facet has just been deleted with have ?fbid={number} with the block number that was being use so it returns with that same tab open
+       if (m = window.location.search.match(/fbid=(\d)/)) { 
+           var bcl = ".kmaps-facets-" + m[1]; 
+           var bn = $(bcl).prevAll('li').length;
+           kmaps_facets_load(bn);
+           $(bcl + ' a').tab('show');
+           if ( !$('#search-flyout').hasClass("isOpened") ) {
+                $('#search-flyout .flap').click();
+            }
+       } 
+       
+       // When no facets chosen
         // Load First flyout on hover over
         $('#search-flyout .flap.on-flap').hover(function() { 
             kmaps_facets_load(0); 
@@ -465,6 +491,7 @@ var kmap_facets_loaded = [false, false, false];
             	         var fkid = (Drupal.settings.kmaps_facets.facet_info["block-" + delta] == 0) ? false : Drupal.settings.kmaps_facets.facet_info["block-" + delta];
             	         var fdata = JSON.parse(Drupal.settings.kmaps_facets["block_" + delta + "_data"]);
             	         // Filter tree in block based on that blocks facet data saved as a Drupal JSON setting
+            	         //console.log('tree', ctx.tree);
             	         ctx.tree.filterNodes(function(node) {
             	            	var kid = node.key;
             	            	if (kid in fdata) {
@@ -477,7 +504,8 @@ var kmap_facets_loaded = [false, false, false];
             	            		node.data.hitct = hct;
             	            		node.title = node.title +  " (" + hct + ")";
             	            		if (kid == fkid) {
-            	            				node.title = node.title + ' <a href="' + Drupal.settings.basePath + '" class="facet-remove">' +
+            	            		         var bid = ctx.tree.$container.parents('.kmaps-facets-block').attr('id').replace('kmtree-','');
+            	            				node.title = node.title + ' <a href="' + Drupal.settings.basePath + '?fbid=' + bid + '" class="facet-remove">' +
             	            				'<span class="icon shanticon-cancel"></span></a>';
             	            		}
             	            		return true;
@@ -496,16 +524,7 @@ var kmap_facets_loaded = [false, false, false];
         	      idPrefix: "kmaps" + $(this).data('delta') + "tree"
 	 		}); // End of .fancytree();
 		}); // End of each
-		setTimeout(function() {
-		    $(".kmapfacettree").each(function() {
-                   var delta = $(this).data('delta');
-    		           var fkid = (Drupal.settings.kmaps_facets.facet_info["block-" + delta] == 0) ? false : Drupal.settings.kmaps_facets.facet_info["block-" + delta];
-                    if (fkid) {
-                        $('.kmaps-facets-' + delta + ' a').tab('show');  // Show the tab in flyout with the facetted block
-                        jQuery('.flap').click();
-                    }
-             });
-	    }, 500);
+		
 	}
 
 	function maskSearchResults(self, isMasked) {
