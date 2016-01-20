@@ -15,9 +15,11 @@ var kmap_facets_loaded = [false, false, false];
          });
          
          // Load second and third flyouts on when hover over tab
-         $('#search-flyout li.kmaps-facets-1 a').hover(function() { 
-            kmaps_facets_load(1); 
+         $('#search-flyout li.km-facet-tab').hover(function() { 
+             var n = $(this).prevAll('li').length;
+             kmaps_facets_load(n); 
          });
+         /*
          $('#search-flyout li.kmaps-facets-2 a').hover(function() { 
             kmaps_facets_load(2); 
          });
@@ -28,7 +30,7 @@ var kmap_facets_loaded = [false, false, false];
          });
          $('#search-flyout li.kmaps-facets-2 a').click(function() { 
             kmaps_facets_load(2); 
-         });
+         });*/
          
          // Initialize the search flyout
         $('#search-flyout').once('fancytree', function () {
@@ -320,6 +322,7 @@ var kmap_facets_loaded = [false, false, false];
 	function kmaps_facets_load(n) {
 		if (n == "undefined" || isNaN(n) || kmap_facets_loaded[n]) { return;}
         kmap_facets_loaded[n] = true;
+        console.log("loading facet block " + n);
 		$(".kmapfacettree").eq(n).each(function() {
         	  	var me = $(this);
         	  	var delta = $(this).data('delta');
