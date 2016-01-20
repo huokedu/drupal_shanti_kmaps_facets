@@ -1,23 +1,43 @@
 /**
  * Created by ys2n on 10/3/14.
  */
-var kmap_facets_loaded = false;
+var kmap_facets_loaded = [false, false, false];
 (function ($) {
 	
 /* $.fn.overlayMask function moved to shanti-sarvaka/shanti-main.js  */
 	
   Drupal.behaviors.kmaps_facets = {
     attach: function (context, settings) {
+        
+        // Load First flyout on hover over
+        $('#search-flyout .flap.on-flap').hover(function() { 
+            kmaps_facets_load(0); 
+         });
+         
+         // Load second and third flyouts on when hover over tab
+         $('#search-flyout li.kmaps-facets-1 a').hover(function() { 
+            kmaps_facets_load(1); 
+         });
+         $('#search-flyout li.kmaps-facets-2 a').hover(function() { 
+            kmaps_facets_load(2); 
+         });
+         
+         // Add clicks for backup.
+         $('#search-flyout li.kmaps-facets-1 a').click(function() { 
+            kmaps_facets_load(1); 
+         });
+         $('#search-flyout li.kmaps-facets-2 a').click(function() { 
+            kmaps_facets_load(2); 
+         });
+         
+         // Initialize the search flyout
         $('#search-flyout').once('fancytree', function () {
         		
             // search min length
             const SEARCH_MIN_LENGTH = 2;
-
-            // $(function () {
-			if ($('.kmapfacettree').length == 0 ) { console.error("No tree div to apply fancytree too"); return; }
-			kmaps_facets_load(); // load facet trees
             
-//				console.log('loading trees....');
+            if ($('.kmapfacettree').length == 0 ) { console.error("No tree div to apply fancytree too");  }
+            
             $('.advanced-link').click(function () {
                 $(this).toggleClass("show-advanced", 'fast');
                 $(".advanced-view").slideToggle('fast');
@@ -32,40 +52,6 @@ var kmap_facets_loaded = false;
 
             $('#searchform').attr('autocomplete', 'off'); // turn off browser autocomplete
 
-            $('.listview').on('shown.bs.tab', function () {
-
-                if ($('div.listview div div.table-responsive table.table-results tr td').length == 0) {
-                    notify.warn("warnnoresults", "Enter a search above.");
-                }
-
-                var header = (location.pathname.indexOf('subjects') !== -1) ? "<th>Name</th><th>Root Category</th>" : "<th>Name</th><th>Feature Type</th>";
-                $('div.listview div div.table-responsive table.table-results tr:has(th):not(:has(td))').html(header);
-                $("table.table-results tbody td span").trunk8({tooltip: false});
-
-                if ($('.row_selected')[0]) {
-                    if ($('.listview')) {
-                        var me = $('div.listview').find('.row_selected');
-                        var myWrapper = me.closest('.view-wrap');
-                        var scrollt = me.offset().top;
-
-                        myWrapper.animate({
-                            scrollTop: scrollt
-                        }, 2000);
-                    }
-                }
-                //});
-
-            });
-/*
-            // Run when switching to tree view
-            $('.treeview').on('shown.bs.tab', function () {
-                var activeNode = $('#tree').fancytree("getTree").getActiveNode();
-                if (activeNode) {
-                    activeNode.makeVisible();
-                }
-            });
-		*/
-							
 			var searchUtil = {
 			    clearSearch: function () {
 			        //        console.log("BANG: searchUtil.clearSearch()");
@@ -331,10 +317,10 @@ var kmap_facets_loaded = false;
   };
   
   
-	function kmaps_facets_load() {
-		if (kmap_facets_loaded) { return;}
-		kmap_facets_loaded = true;
-		$(".kmapfacettree").each(function() {
+	function kmaps_facets_load(n) {
+		if (n == "undefined" || isNaN(n) || kmap_facets_loaded[n]) { return;}
+        kmap_facets_loaded[n] = true;
+		$(".kmapfacettree").eq(n).each(function() {
         	  	var me = $(this);
         	  	var delta = $(this).data('delta');
         	    var kmtype = $(this).data('kmtype');
@@ -342,15 +328,7 @@ var kmap_facets_loaded = false;
         	    var kmroot = $(this).data('kmroot');
         	    if (kmroot != '') { kmroot = kmroot + '/'; }
         	    var kmdataurl = $(this).data("kmurl");
-        	    /*var kmdataurl = kmserver + "/features/" + kmroot + "fancy_nested.json";
-        	    if (kmtype == 'subjects' && kmroot == '') { 
-        	        var sserv = (Drupal.settings.shanti_kmaps_admin && 
-        	    								Drupal.settings.shanti_kmaps_admin.shanti_kmaps_admin_server_subjects) ? 
-        	    									Drupal.settings.shanti_kmaps_admin.shanti_kmaps_admin_server_subjects : 
-        	    										'http://subjects.kmaps.virginia.edu';
-        				kmdataurl = Drupal.settings.kmaps_facets.mod_home + '/subjectproxy.php?server=' + sserv;
-        		}*/
-//        		console.log(kmdataurl);
+
         	  	$(this).fancytree({
         	      extensions: ["filter", "glyph"],
         	      checkbox: false,
