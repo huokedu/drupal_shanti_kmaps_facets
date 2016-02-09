@@ -27,7 +27,7 @@ var kmap_facets_loaded = [false, false, false];
        if (m = window.location.search.match(/fbid=(\d)/)) { 
            var bcl = ".kmaps-facets-" + m[1]; 
            var bn = $(bcl).prevAll('li').length;
-           kmaps_facets_load(bn);
+           kmaps_facets_load(bn);     
            $(bcl + ' a').tab('show');
            if ( !$('#search-flyout').hasClass("isOpened") ) {
                 $('#search-flyout .flap').click();
@@ -44,6 +44,9 @@ var kmap_facets_loaded = [false, false, false];
          $('#search-flyout li.km-facet-tab').hover(function() { 
              var n = $(this).prevAll('li').length;
              kmaps_facets_load(n); 
+                  
+            $('.fancytree-hide').parent('li').hide(); // hide the li parent of hidden nodes.
+              console.log('here 2');
          });
          /*
          $('#search-flyout li.kmaps-facets-2 a').hover(function() { 
@@ -348,6 +351,20 @@ var kmap_facets_loaded = [false, false, false];
 	function kmaps_facets_load(n) {
 		if (n == "undefined" || isNaN(n) || kmap_facets_loaded[n]) { return;}
         kmap_facets_loaded[n] = true;
+        // Kludge: Use the presence of fancy tree class with 'ext-filter' to determine fancytree has loaded and then hide <li> with no visible content.
+        Drupal.settings.kfintct = 0;
+        Drupal.settings.kfint = setInterval(function() {
+            if ($(".kmapfacettree").eq(n).attr('class').indexOf('ext-filter') > -1) {
+                $('.fancytree-hide').parent('li').hide();
+                window.clearInterval(Drupal.settings.kfint );
+            } else {
+                Drupal.settings.kfintct++;
+                if (Drupal.settings.kfintct > 20) {
+                    window.clearInterval(Drupal.settings.kfint );
+                }
+            }
+        }, 500);
+        
         //console.log("loading facet block " + n);
 		$(".kmapfacettree").eq(n).each(function() {
         	  	var me = $(this);
@@ -512,7 +529,6 @@ var kmap_facets_loaded = [false, false, false];
             	            	}
             	            	return false;
             	         });
-            	        
             	         if (!fkid) {
             	         	   // With no facet collapse tree to immediate children of root child
             	             var troot = ctx.tree.getFirstChild();
@@ -523,8 +539,7 @@ var kmap_facets_loaded = [false, false, false];
         	      cookieId: "kmaps" + $(this).data('delta') + "tree", // set cookies for search-browse tree
         	      idPrefix: "kmaps" + $(this).data('delta') + "tree"
 	 		}); // End of .fancytree();
-		}); // End of each
-		
+		}); // End of each         
 	}
 
 	function maskSearchResults(self, isMasked) {
