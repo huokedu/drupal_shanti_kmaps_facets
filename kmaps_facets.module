@@ -315,7 +315,6 @@ function kmaps_facets_theme() {
          }
          $json_data = file_get_contents($dataurl);
          cache_set($cache_name, $json_data, 'cache');
-         watchdog('kmap facets', $json_data);
          drupal_json_output(json_decode($json_data));
      }
  }
