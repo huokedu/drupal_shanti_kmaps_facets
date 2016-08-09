@@ -63,6 +63,7 @@ var kmap_facets_loaded = [false, false, false];
          
          // Initialize the search flyout
         $('#search-flyout').once('fancytree', function () {
+        	var $flyout = $(this);
         		
             // search min length
             const SEARCH_MIN_LENGTH = 2;
@@ -238,7 +239,7 @@ var kmap_facets_loaded = [false, false, false];
 			    });
 			
 			
-			    var termidx = Drupal.settings.shanti_kmaps_admin.shanti_kmaps_admin_server_solr_term;
+			    var termidx = Drupal.settings.shanti_kmaps_admin.shanti_kmaps_admin_server_solr_terms;
 			
 			    if (!termidx) {
 			        termidx = Drupal.settings.shanti_kmaps_admin.shanti_kmaps_admin_server_solr;
@@ -299,27 +300,27 @@ var kmap_facets_loaded = [false, false, false];
 			// --- features inputs - focusin / focusout
 			$(kms).focusin(function () {
 			    $(kms).attr("placeholder", "");
-			    $("button.searchreset").show("fast");
+			    $("button.searchreset", $flyout).show("fast");
 			});
 			$(kms).focusout(function () {
 			    $(kms).attr("placeholder", $(kms).data("holder"));
-			    $("button.searchreset").hide();
+			    $("button.searchreset", $flyout).hide();
 			
 			    var str = "Enter Search...";
 			    var txt = $(kms).val();
 			
 			    if (str.indexOf(txt) > -1) {
-			        $("button.searchreset").hide();
+			        $("button.searchreset", $flyout).hide();
 			        return true;
 			    } else {
-			        $("button.searchreset").show(100);
+			        $("button.searchreset", $flyout).show(100);
 			        return false;
 			    }
 			});
 			// --- close and clear all
-			$("button.searchreset").click(function () {
+			$("button.searchreset", $flyout).click(function () {
 			    $(kms).attr("placeholder", $(kms).data("holder"));
-			    $("button.searchreset").hide();
+			    $("button.searchreset", $flyout).hide();
 			    $(".alert").hide();
 			    //    console.log("clearFilter()");
 			    searchUtil.clearSearch();
